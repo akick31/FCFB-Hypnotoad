@@ -20,22 +20,21 @@ async def get_discord_user_by_name(client, name, logger):
         return e(exceptionMessage)
 
 
-async def create_game_channel(message, homeTeam, awayTeam, logger):
+async def create_channel(message, channelName, logger):
     """
-    Create a game channel for a game
+    Create a channel
 
-    :param homeTeam:
-    :param awayTeam:
+    :param channelName
     :return:
     """
 
     # Create game channel
     try:
-        gameChannel = await message.guild.create_text_channel(awayTeam + " @ " + homeTeam)
-        logger.info("Game channel created for " + awayTeam + " @ " + homeTeam)
+        gameChannel = await message.guild.create_text_channel(channelName)
+        logger.info("Channel named " + channelName + " created")
         return gameChannel
     except Exception as e:
-        exceptionMessage = "Error creating game channel"
+        exceptionMessage = "Error creating channel"
         logger.error(exceptionMessage)
         return e(exceptionMessage)
 

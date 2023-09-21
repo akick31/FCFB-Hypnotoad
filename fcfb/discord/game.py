@@ -1,6 +1,6 @@
 import sys
 
-from fcfb.discord.utils import create_game_channel, create_message, get_discord_user_by_name
+from fcfb.discord.utils import create_channel, create_message, get_discord_user_by_name
 from fcfb.database.communication import retrieve_value_from_table
 
 sys.path.append("..")
@@ -27,7 +27,8 @@ async def start_game(client, configData, message, gameParameters, logger):
 
     # Create game channel
     try:
-        gameChannel = await create_game_channel(message, homeTeam, awayTeam, logger)
+        channelName = awayTeam + " at " + homeTeam + " (Season " + season + " | " + subdivision + ")"
+        gameChannel = await create_channel(message, channelName, logger)
         awayCoachTag = await retrieve_value_from_table(configData, "users", "name", awayTeam, "discord_tag", logger)
         awayCoachDiscord = await get_discord_user_by_name(client, awayCoachTag, logger)
 
