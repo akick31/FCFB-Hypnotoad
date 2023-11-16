@@ -3,10 +3,10 @@ import discord
 
 async def get_discord_user_by_name(client, name, logger):
     """
-    Get a discord user by name
+    Get a Discord user by name
 
     :param client:
-    :param id:
+    :param name:
     :param logger:
     :return:
     """
@@ -17,36 +17,37 @@ async def get_discord_user_by_name(client, name, logger):
             raise Exception("User not found")
         return user
     except Exception as e:
-        exceptionMessage = "Error getting Discord user"
-        logger.error(exceptionMessage)
-        raise e(exceptionMessage)
+        error_message = "Error getting Discord user"
+        logger.error(error_message)
+        raise Exception(error_message)
 
 
-async def create_channel(message, channelName, categoryName, logger):
+async def create_channel(message, channel_name, category_name, logger):
     """
     Create a channel
 
-    :param channelName
+    :param message:
+    :param channel_name:
+    :param category_name:
+    :param logger:
     :return:
     """
 
-    # Create game channel
     try:
-        category = await get_category_by_name(message, categoryName, logger)
-        gameChannel = await message.guild.create_text_channel(channelName, category=category)
-        logger.info("Channel named " + channelName + " created")
-        return gameChannel
+        category = await get_category_by_name(message, category_name, logger)
+        game_channel = await message.guild.create_text_channel(channel_name, category=category)
+        logger.info("Channel named " + channel_name + " created")
+        return game_channel
     except Exception as e:
-        exceptionMessage = "Error creating channel"
-        logger.error(exceptionMessage)
-        raise e(exceptionMessage)
+        error_message = "Error creating channel"
+        logger.error(error_message)
+        raise Exception(error_message)
 
 
 async def delete_channel(channel, logger):
     """
     Delete a channel
 
-    :param message:
     :param channel:
     :param logger:
     :return:
@@ -56,47 +57,48 @@ async def delete_channel(channel, logger):
         await channel.delete()
         logger.info("Channel named " + channel.name + " deleted")
     except Exception as e:
-        exceptionMessage = "Error deleting channel"
-        logger.error(exceptionMessage)
-        raise e(exceptionMessage)
+        error_message = "Error deleting channel"
+        logger.error(error_message)
+        raise Exception(error_message)
 
 
-async def get_category_by_name(message, categoryName, logger):
+async def get_category_by_name(message, category_name, logger):
     """
     Get a category by name
 
     :param message:
-    :param categoryName:
+    :param category_name:
     :param logger:
     :return:
     """
 
     try:
-        category = discord.utils.get(message.guild.categories, name=categoryName)
+        category = discord.utils.get(message.guild.categories, name=category_name)
         if category is None:
             raise Exception("Category not found")
         return category
     except Exception as e:
-        exceptionMessage = "Error getting category"
-        logger.error(exceptionMessage)
-        raise e(exceptionMessage)
+        error_message = "Error getting category"
+        logger.error(error_message)
+        raise Exception(error_message)
 
 
-async def create_message(channel, messageText, logger):
+async def create_message(channel, message_text, logger):
     """
     Create a message
 
     :param channel:
-    :param messageText:
+    :param message_text:
+    :param logger:
     :return:
     """
 
     try:
-        await channel.send(messageText)
+        await channel.send(message_text)
     except Exception as e:
-        exceptionMessage = "Error sending message to channel"
-        logger.error(exceptionMessage)
-        raise e(exceptionMessage)
+        error_message = "Error sending message to channel"
+        logger.error(error_message)
+        raise Exception(error_message)
 
 
 async def create_message_with_embed(channel, embed, logger):
@@ -111,6 +113,29 @@ async def create_message_with_embed(channel, embed, logger):
     try:
         await channel.send(embed=embed)
     except Exception as e:
-        exceptionMessage = "Error sending embed message to channel"
-        logger.error(exceptionMessage)
-        raise e(exceptionMessage)
+        error_message = "Error sending embed message to channel"
+        logger.error(error_message)
+        raise Exception(error_message)
+
+
+async def send_direct_message(user, message_text, logger):
+    """
+    Send a direct message to a user
+
+    :param user: Discord user object
+    :param message_text: Text of the message to be sent
+    :param logger: Logger object
+    :return:
+    """
+
+    try:
+        await user.send(message_text)
+        logger.info(f"Direct message sent to {user.name}")
+    except discord.Forbidden:
+        # The user has DMs disabled or has blocked the bot
+        logger.error(f"Failed to send a direct message to {user.name}. "
+                     f"The user may have DMs disabled or blocked the bot.")
+    except Exception as e:
+        error_message = "Error sending direct message"
+        logger.error(error_message)
+        raise Exception(error_message)

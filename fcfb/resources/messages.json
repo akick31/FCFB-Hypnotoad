@@ -1,0 +1,6 @@
+{
+  "coinTossResultMessage": "{winner} wins the coin toss! Please call \"!choice\" and whether you want to **receive** or **defer**",
+  "coinTossChoiceMessage": "{winner} has selected to {choice}! Messaging the receiving team for their kickoff number. The game has started! Good luck!",
+  "gameStartMessage": "Hello and welcome to Fake College Football!\n---------------\n\nIt is time for the coin toss! {away_coach_discord_object}, you're away, call \"!coin\" and **heads** or **tails** in the air",
+  "kickingNumberMessage": "{kicking_team} is kicking off. {clock} left in Q{quarter}.\n\nReply with a number between **1** and **1500**, inclusive.\n\nYou have until {timer}, which is 24 hours from now."
+}
