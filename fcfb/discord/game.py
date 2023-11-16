@@ -6,6 +6,7 @@ from fcfb.api.zebstrika_users import get_user_by_team
 
 sys.path.append("..")
 
+
 async def start_game(client, config_data, discord_messages, message, game_parameters, logger):
     """
     Start a game

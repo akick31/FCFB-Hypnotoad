@@ -3,7 +3,7 @@ import sys
 
 sys.path.append("..")
 
-from fcfb.discord.commands import parse_commands
+from fcfb.discord.messaging import parse_commands, parse_direct_message_number_submission
 
 
 def run_hypnotoad(config_data, discord_messages, logger):
@@ -22,13 +22,20 @@ def run_hypnotoad(config_data, discord_messages, logger):
     intents = discord.Intents.default()
     intents.message_content = True
     intents.members = True
+    intents.guilds = True
     intents.presences = True
     client = discord.Client(intents=intents)
 
     @client.event
     async def on_message(message):
+        if message.author.bot:
+            return
+
         if message.content.startswith(prefix):
             await parse_commands(client, config_data, discord_messages, prefix, message, logger)
+
+        elif isinstance(message.channel, discord.DMChannel):
+            await parse_direct_message_number_submission(client, config_data, discord_messages, message, logger)
 
     @client.event
     async def on_ready():

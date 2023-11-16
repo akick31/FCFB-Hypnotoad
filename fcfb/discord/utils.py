@@ -83,6 +83,28 @@ async def get_category_by_name(message, category_name, logger):
         raise Exception(error_message)
 
 
+async def get_channel_by_id(client, config_data, channel_id, logger):
+    """
+    Get a Discord channel by ID
+
+    :param client: Discord client object
+    :param config_data: Config data
+    :param channel_id: ID of the channel to retrieve
+    :param logger: Logger object
+    :return: Channel object or None if not found
+    """
+
+    try:
+        channel = client.get_channel(int(channel_id))
+        if channel is None:
+            raise Exception(f"Channel with ID {channel_id} not found")
+        return channel
+    except Exception as e:
+        error_message = f"Error getting Discord channel with ID {channel_id}"
+        logger.error(error_message)
+        raise Exception(error_message)
+
+
 async def create_message(channel, message_text, logger):
     """
     Create a message
@@ -101,35 +123,40 @@ async def create_message(channel, message_text, logger):
         raise Exception(error_message)
 
 
-async def create_message_with_embed(channel, embed, logger):
+async def create_message_with_embed(channel, message_text, embed, logger):
     """
     Create a message with an embed
 
     :param channel:
+    :param message_text:
     :param embed:
     :return:
     """
 
     try:
-        await channel.send(embed=embed)
+        await channel.send(message_text, embed=embed)
     except Exception as e:
         error_message = "Error sending embed message to channel"
         logger.error(error_message)
         raise Exception(error_message)
 
 
-async def send_direct_message(user, message_text, logger):
+async def send_direct_message(user, message_text, logger, embed=None):
     """
     Send a direct message to a user
 
     :param user: Discord user object
     :param message_text: Text of the message to be sent
     :param logger: Logger object
+    :param embed: Embed object
     :return:
     """
 
     try:
-        await user.send(message_text)
+        if embed is None:
+            await user.send(message_text)
+        else:
+            await user.send(message_text, embed=embed)
         logger.info(f"Direct message sent to {user.name}")
     except discord.Forbidden:
         # The user has DMs disabled or has blocked the bot

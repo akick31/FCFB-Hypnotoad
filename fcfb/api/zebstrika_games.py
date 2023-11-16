@@ -31,6 +31,34 @@ async def get_ongoing_game_by_channel_id(config_data, channel_id, logger):
         raise Exception(error_message)
 
 
+async def get_ongoing_game_by_id(config_data, game_id, logger):
+    """
+    Make API call to get the ongoing game via the game ID
+    :param config_data:
+    :param game_id:
+    :param logger:
+    :return:
+    """
+
+    try:
+        payload = f"game_id/{game_id}"
+        endpoint = config_data['api']['url'] + GAMES_PATH + payload
+        response = requests.get(endpoint)
+
+        if response.status_code == 200 or response.status_code == 201:
+            logger.info(f"SUCCESS: Grabbed the ongoing game for game id {game_id}")
+            return response.json()
+        else:
+            exception_message = f"HTTP {response.status_code} response {response.text}"
+            logger.error(exception_message)
+            raise Exception(exception_message)
+
+    except Exception as e:
+        error_message = f"- An unexpected error occurred while getting an ongoing game by game ID: {e}"
+        logger.error(error_message)
+        raise Exception(error_message)
+
+
 async def post_game(config_data, channel_id, season, subdivision, home_team, away_team, tv_channel, start_time, location,
                     logger):
     """
@@ -80,7 +108,7 @@ async def run_coin_toss(config_data, game_id, coin_toss_choice, logger):
     """
 
     try:
-        payload = f"coinToss/{game_id}/{coin_toss_choice}"
+        payload = f"coin_toss/{game_id}/{coin_toss_choice}"
         endpoint = config_data['api']['url'] + GAMES_PATH + payload
         response = requests.put(endpoint)
 
@@ -110,7 +138,7 @@ async def update_coin_toss_choice(config_data, game_id, coin_toss_choice, logger
     """
 
     try:
-        payload = f"coinTossChoice/{game_id}/{coin_toss_choice}"
+        payload = f"coin_toss_choice/{game_id}/{coin_toss_choice}"
         endpoint = config_data['api']['url'] + GAMES_PATH + payload
         response = requests.put(endpoint)
 
@@ -140,12 +168,12 @@ async def update_waiting_on(config_data, game_id, username, logger):
     """
 
     try:
-        payload = f"waitingOn/{game_id}/{username}"
+        payload = f"waiting_on/{game_id}/{username}"
         endpoint = config_data['api']['url'] + GAMES_PATH + payload
         response = requests.put(endpoint)
 
         if response.status_code == 200 or response.status_code == 201:
-            logger.info(f"SUCCESS: Updated the team the game is waiting on for {game_id} to {username}")
+            logger.info(f"SUCCESS: Updated the team the game is waiting on for game {game_id} to {username}")
             return response.json()
         else:
             exception_message = f"HTTP {response.status_code} response {response.text}"
@@ -153,7 +181,7 @@ async def update_waiting_on(config_data, game_id, username, logger):
             raise Exception(exception_message)
 
     except Exception as e:
-        error_message = f"- An unexpected error occurred while updating the coin toss choice: {e}"
+        error_message = f"- An unexpected error occurred while updating the team that the game is waiting on: {e}"
         logger.error(error_message)
         raise Exception(error_message)
 
