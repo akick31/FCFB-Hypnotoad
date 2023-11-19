@@ -20,6 +20,9 @@ async def get_ongoing_game_by_channel_id(config_data, channel_id, logger):
         if response.status_code == 200 or response.status_code == 201:
             logger.info(f"SUCCESS: Grabbed the ongoing game for {channel_id}")
             return response.json()
+        elif response.status_code == 404:
+            logger.info(f"SUCCESS: No ongoing game for {channel_id}")
+            return None
         else:
             exception_message = f"HTTP {response.status_code} response {response.text}"
             logger.error(exception_message)
@@ -48,15 +51,19 @@ async def get_ongoing_game_by_id(config_data, game_id, logger):
         if response.status_code == 200 or response.status_code == 201:
             logger.info(f"SUCCESS: Grabbed the ongoing game for game id {game_id}")
             return response.json()
+        elif response.status_code == 404:
+            logger.info(f"SUCCESS: No ongoing game for game id {game_id}")
         else:
             exception_message = f"HTTP {response.status_code} response {response.text}"
             logger.error(exception_message)
             raise Exception(exception_message)
+        return None
 
     except Exception as e:
         error_message = f"- An unexpected error occurred while getting an ongoing game by game ID: {e}"
         logger.error(error_message)
         raise Exception(error_message)
+        return None
 
 
 async def post_game(config_data, channel_id, season, subdivision, home_team, away_team, tv_channel, start_time, location,

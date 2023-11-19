@@ -1,9 +1,9 @@
 import discord
 import sys
 
-sys.path.append("..")
-
 from fcfb.discord.messaging import parse_commands, parse_direct_message_number_submission
+
+sys.path.append("..")
 
 
 def run_hypnotoad(config_data, discord_messages, logger):
