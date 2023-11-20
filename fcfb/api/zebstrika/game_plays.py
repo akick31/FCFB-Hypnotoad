@@ -50,19 +50,22 @@ async def submit_offensive_number(config_data, game_id, play_id, offensive_numbe
     """
 
     try:
-        payload = f"offense_submitted/{play_id}/{offensive_number}/{play}/{runoff_type}/{offensive_timeout_called}/{defensive_timeout_called}"
+        offensive_timeout_called_str = str(offensive_timeout_called).lower()
+        defensive_timeout_called_str = str(defensive_timeout_called).lower()
+        payload = f"offense_submitted/{play_id}/{offensive_number}/{play}/{runoff_type}" \
+                  f"/{offensive_timeout_called_str}/{defensive_timeout_called_str}"
         endpoint = config_data['api']['url'] + GAME_PLAYS_PATH + payload
-        response = requests.post(endpoint)
+        response = requests.put(endpoint)
 
         if response.status_code == 200 or response.status_code == 201:
             logger.info(f"SUCCESS: Play was run successfully {game_id}")
-            return response.status_code
+            return response.json()
         else:
             exception_message = f"HTTP {response.status_code} response {response.text}"
             logger.error(exception_message)
             raise Exception(exception_message)
 
     except Exception as e:
-        error_message = f"- An unexpected error occurred while submitting a defensive number: {e}"
+        error_message = f"- An unexpected error occurred while running the play: {e}"
         logger.error(error_message)
         raise Exception(error_message)

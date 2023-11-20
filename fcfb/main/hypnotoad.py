@@ -43,3 +43,5 @@ if __name__ == '__main__':
 
     # Run Hypnotoad
     hypnotoad(config_data, discord_messages, logger)
+
+# TODO: Move game ID to footer of embed

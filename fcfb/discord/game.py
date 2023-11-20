@@ -32,8 +32,7 @@ async def start_game(client, config_data, discord_messages, message, game_parame
             raise ValueError("Error parsing parameters for starting a game. Expected 7 parameters.")
 
         # Extract game parameters
-        home_platform, home_platform_id, away_platform, away_platform_id, season, subdivision, home_team, away_team, \
-            tv_channel, start_time, location = map(str.strip, game_parameters)
+        season, subdivision, home_team, away_team, tv_channel, start_time, location = map(str.strip, game_parameters)
 
         # Create game channel
         channel_name = f"{away_team} at {home_team} S{season} {subdivision}"
@@ -47,8 +46,8 @@ async def start_game(client, config_data, discord_messages, message, game_parame
         away_coach_discord_object = await get_discord_user_by_name(client, away_coach_tag, logger)
 
         # Start the game
-        await post_game(config_data, game_channel.id, home_platform, home_platform_id, away_platform, away_platform_id, 
-                        season, subdivision, home_team, away_team, tv_channel, start_time, location, logger)
+        await post_game(config_data, game_channel.id, season, subdivision, home_team, away_team, tv_channel, start_time,
+                        location, logger)
 
         # Prompt for coin toss
         start_game_message = discord_messages["gameStartMessage"].format(
@@ -100,7 +99,7 @@ async def delete_game(config_data, game_channel, logger):
 
 async def validate_and_submit_offensive_number(client, config_data, discord_messages, message, logger):
     """
-    Validate the defensive number and submit it to the API
+    Validate the offensive number and submit it to the API
 
     :param client:
     :param config_data:
@@ -132,6 +131,7 @@ async def validate_and_submit_offensive_number(client, config_data, discord_mess
             play = parse_normal_play(message.content)
         elif play_type == "KICKOFF":
             play = parse_kickoff_play(message.content)
+            play = "kickoff " + play  # Add kickoff to the play, as it is what the API expects
         elif play_type == "POINT AFTER":
             play = parse_point_after_play(message.content)
         else:
@@ -144,7 +144,7 @@ async def validate_and_submit_offensive_number(client, config_data, discord_mess
         offensive_timeout_called = parse_timeout_called(message.content)
 
         # Get the defensive timeout called
-        defensive_timeout_called = await parse_defensive_timeout_called(client, message.content)
+        defensive_timeout_called = await parse_defensive_timeout_called(client, message)
 
         # If defensive timeout called, set offensive timeout to false
         if defensive_timeout_called:
@@ -160,10 +160,10 @@ async def validate_and_submit_offensive_number(client, config_data, discord_mess
         # Send the prompt for the next number
         if play_result["possession"] == "home":
             await message_defense_for_number(client, config_data, discord_messages, message, game_object,
-                                             play_result["homeTeam"], logger)
+                                             play_result["awayTeam"], logger)
         else:
             await message_defense_for_number(client, config_data, discord_messages, message, game_object,
-                                             play_result["awayTeam"], logger)
+                                             play_result["homeTeam"], logger)
 
     except ValueError as ve:
         exception_message = str(ve)
@@ -171,7 +171,7 @@ async def validate_and_submit_offensive_number(client, config_data, discord_mess
         await create_message(message.channel, exception_message, logger)
 
     except Exception as e:
-        exception_message = f"An unexpected error occurred while submitting a defensive number:\n{e}"
+        exception_message = f"An unexpected error occurred while submitting an offensive number:\n{e}"
         logger.error(exception_message, exc_info=True)
         await create_message(message.channel, exception_message, logger)
         raise Exception(exception_message)
@@ -200,7 +200,7 @@ async def validate_and_submit_defensive_number(client, config_data, discord_mess
 
         validate_waiting_on(message, game_object, home_user_object, away_user_object)
 
-        validate_possession(message, game_object, home_user_object, away_user_object)
+        validate_no_possession(message, game_object, home_user_object, away_user_object)
 
         defensive_number = parse_play_number(message.content)
         validate_play_number(defensive_number)
@@ -408,7 +408,7 @@ def validate_waiting_on(message, game_object, home_user_object, away_user_object
                          f"{waiting_on_username}")
 
 
-def validate_possession(message, game_object, home_user_object, away_user_object):
+def validate_no_possession(message, game_object, home_user_object, away_user_object):
     """
     Validate the user does not have possession of the ball
     :param message:
@@ -423,6 +423,25 @@ def validate_possession(message, game_object, home_user_object, away_user_object
     if (possession == "home" and home_user_object["discordTag"] == author_name) \
             or (possession == "away" and away_user_object["discordTag"] == author_name):
         raise ValueError("You have possession, please submit your number in the game channel instead")
+
+
+def validate_possession(message, game_object, home_user_object, away_user_object):
+    """
+    Validate the user has possession of the ball
+
+    :param message:
+    :param game_object:
+    :param home_user_object:
+    :param away_user_object:
+    :return:
+    """
+
+    possession, author_name = game_object["possession"], message.author.name
+
+    if (possession == "home" and away_user_object["discordTag"] == author_name) \
+            or (possession == "away" and home_user_object["discordTag"] == author_name):
+        raise ValueError("You don't have possession, please submit your number in your DMs instead. "
+                         "The game is waiting on you.")
 
 
 def parse_play_number(message_content):

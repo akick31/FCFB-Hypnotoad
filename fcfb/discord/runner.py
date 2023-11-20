@@ -1,7 +1,9 @@
 import discord
 import sys
 
-from fcfb.discord.messaging import parse_commands, parse_direct_message_number_submission
+from fcfb.discord.commands import parse_commands, parse_direct_message_number_submission
+from fcfb.discord.game import validate_and_submit_offensive_number
+from fcfb.discord.utils import check_if_channel_is_game_channel
 
 sys.path.append("..")
 
@@ -33,9 +35,10 @@ def run_hypnotoad(config_data, discord_messages, logger):
 
         if message.content.startswith(prefix):
             await parse_commands(client, config_data, discord_messages, prefix, message, logger)
-
         elif isinstance(message.channel, discord.DMChannel):
             await parse_direct_message_number_submission(client, config_data, discord_messages, message, logger)
+        elif check_if_channel_is_game_channel(config_data, message, logger):
+            await validate_and_submit_offensive_number(client, config_data, discord_messages, message, logger)
 
     @client.event
     async def on_ready():

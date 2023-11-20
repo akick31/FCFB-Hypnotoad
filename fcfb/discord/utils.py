@@ -233,6 +233,14 @@ async def check_if_channel_is_game_channel(config_data, message, logger):
     """
 
     try:
+        # Cut down on API calls by only looking in channels in the games category
+        if isinstance(message.channel, discord.TextChannel):
+            channel_category = message.channel.category
+            if channel_category:
+                category_name = channel_category.name
+                if category_name != "Games":
+                    return
+
         game_object = await get_ongoing_game_by_channel_id(config_data, message.channel.id, logger)
         if game_object is None:
             return False

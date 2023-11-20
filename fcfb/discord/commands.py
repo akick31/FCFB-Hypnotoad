@@ -2,7 +2,7 @@ import sys
 import discord
 
 from fcfb.discord.game import start_game, delete_game, validate_and_submit_defensive_number, \
-    validate_and_submit_offensive_number
+    validate_and_submit_offensive_number, message_defense_for_number
 from fcfb.discord.utils import create_message, create_message_with_embed, get_discord_user_by_name, \
     check_if_channel_is_game_channel
 from fcfb.api.zebstrika.games import get_ongoing_game_by_channel_id, run_coin_toss, update_coin_toss_choice, \
@@ -47,9 +47,6 @@ async def parse_commands(client, config_data, discord_messages, prefix, message,
         elif message_content_lower.startswith(prefix + 'choice'):
             coin_toss_choice = message_content.split('choice')[1].strip()
             await coin_toss_choice_command(client, config_data, discord_messages, coin_toss_choice, message, logger)
-
-        elif check_if_channel_is_game_channel(config_data, message, logger):
-            await validate_and_submit_defensive_number(client, config_data, discord_messages, message, logger)
 
     except Exception as e:
         logger.error(f"An unexpected error occurred: {e}", exc_info=True)
@@ -97,10 +94,8 @@ async def display_help_command(channel, prefix, logger):
     """
 
     command_list = "start\n"
-    parameters_list = "[home platform, home platform id, away platform, home platform id, season, subdivision, " \
-                      "home team, away team, tv channel, start time, location]\n"
-    example_list = prefix + "start [Discord, [Discord Channel ID], Reddit, [Reddit Channel ID], 9, FBS, Ohio State, " \
-                            "Michigan, ABC, 12:00 PM, War Memorial Stadium]\n"
+    parameters_list = "[season, subdivision, home team, away team, tv channel, start time, location]\n"
+    example_list = prefix + "start 9, FBS, Ohio State, Michigan, ABC, 12:00 PM, War Memorial Stadium]\n"
 
     embed = discord.Embed(
         title="Hypnotoad Commands",
@@ -128,13 +123,14 @@ async def start_game_command(client, config_data, discord_messages, command, mes
 
     try:
         game_parameters = command.split('[')[1].split(']')[0].split(',')
-        if len(game_parameters) != 11:
+        if len(game_parameters) != 7:
             raise ValueError("Error parsing parameters for start game command")
 
         logger.info("Starting game with parameters: " + str(game_parameters))
         await start_game(client, config_data, discord_messages, message, game_parameters, logger)
-        logger.info("SUCCESS: Game started with parameters: " + str(game_parameters) + " in channel: "
-                    + str(message.channel.id))
+        success_message = f"SUCCESS: Game started with parameters: {game_parameters} in channel: {message.channel.id}"
+        logger.info(success_message)
+        await create_message(message.channel, success_message, logger)
 
     except ValueError as ve:
         exception_message = str(ve)
