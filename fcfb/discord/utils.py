@@ -1,6 +1,6 @@
 import discord
 
-from fcfb.api.zebstrika_games import get_ongoing_game_by_channel_id
+from fcfb.api.zebstrika.games import get_ongoing_game_by_channel_id
 
 
 async def get_discord_user_by_name(client, name, logger):
@@ -168,6 +168,58 @@ async def send_direct_message(user, message_text, logger, embed=None):
         error_message = f"Error sending direct message: {e}"
         logger.error(error_message)
         raise Exception(error_message)
+
+
+async def craft_number_request_embed(config_data, message, defense_called_timeout, logger, channel_id=None):
+    """
+    Create the embed for number requests
+
+    :param config_data:
+    :param message:
+    :param defense_called_timeout:
+    :param logger:
+    :param channel_id:
+    :return:
+    """
+
+    if channel_id is None:
+        game_object = await get_ongoing_game_by_channel_id(config_data, message.channel.id, logger)
+    else:
+        game_object = await get_ongoing_game_by_channel_id(config_data, channel_id, logger)
+    home_score, away_score = int(game_object["homeScore"]), int(game_object["awayScore"])
+    down, yards_to_go = game_object["down"], game_object["yardsToGo"]
+    ball_location = game_object["ballLocation"]
+    possession, home_team, away_team = game_object["possession"], game_object["homeTeam"], game_object["awayTeam"]
+
+    score_text = (f"{home_team} leads {away_team} {home_score}-{away_score}" if home_score > away_score else
+                  f"{away_team} leads {home_team} {home_score}-{away_score}" if home_score < away_score else
+                  f"{home_team} and {away_team} are tied {home_score}-{away_score}")
+
+    down_and_distance = f"{down}{'st' if down == 1 else 'nd' if down == 2 else 'rd' if down == 3 else 'th'} and " \
+                        f"{yards_to_go}"
+
+    yard_line = (f"{away_team} {100 - ball_location}" if ball_location > 50 and possession == home_team else
+                 f"{home_team} {100 - ball_location}" if ball_location > 50 and possession == away_team else
+                 f"{home_team} {ball_location}" if possession == home_team else
+                 f"{away_team} {ball_location}")
+
+    status_message = f"{score_text}\nQ{game_object['quarter']} | {game_object['clock']} | {down_and_distance} " \
+                     f"| :football: {yard_line}"
+
+    embed = discord.Embed(
+        title="Submit a Number",
+        description=f"**Game ID: {game_object['gameId']}**",
+        color=discord.Color.green()
+    )
+    embed.add_field(name="Status", value=status_message, inline=False)
+    embed.add_field(name="Instructions", value="Please submit a number between **1** and **1500**, inclusive",
+                    inline=False)
+    if defense_called_timeout:
+        embed.add_field(name="Timeout", value="The defense has called a timeout", inline=False)
+    embed.add_field(name="Deadline", value=f"You have until {game_object['gameTimer']} to submit a number",
+                    inline=False)
+
+    return embed
 
 
 async def check_if_channel_is_game_channel(config_data, message, logger):

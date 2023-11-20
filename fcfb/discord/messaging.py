@@ -4,10 +4,10 @@ import discord
 from fcfb.discord.game import start_game, delete_game, validate_and_submit_defensive_number, \
     validate_and_submit_offensive_number
 from fcfb.discord.utils import create_message, create_message_with_embed, get_discord_user_by_name, \
-    send_direct_message, check_if_channel_is_game_channel, get_channel_by_id
-from fcfb.api.zebstrika_games import get_ongoing_game_by_channel_id, run_coin_toss, update_coin_toss_choice, \
+    check_if_channel_is_game_channel
+from fcfb.api.zebstrika.games import get_ongoing_game_by_channel_id, run_coin_toss, update_coin_toss_choice, \
     update_waiting_on
-from fcfb.api.zebstrika_users import get_user_by_team
+from fcfb.api.zebstrika.users import get_user_by_team
 
 sys.path.append("..")
 
@@ -97,8 +97,10 @@ async def display_help_command(channel, prefix, logger):
     """
 
     command_list = "start\n"
-    parameters_list = "[season, subdivision, home team, away team, tv channel, start time, location]\n"
-    example_list = prefix + "start [9, FBS, Ohio State, Michigan, ABC, 12:00 PM, War Memorial Stadium]\n"
+    parameters_list = "[home platform, home platform id, away platform, home platform id, season, subdivision, " \
+                      "home team, away team, tv channel, start time, location]\n"
+    example_list = prefix + "start [Discord, [Discord Channel ID], Reddit, [Reddit Channel ID], 9, FBS, Ohio State, " \
+                            "Michigan, ABC, 12:00 PM, War Memorial Stadium]\n"
 
     embed = discord.Embed(
         title="Hypnotoad Commands",
@@ -126,7 +128,7 @@ async def start_game_command(client, config_data, discord_messages, command, mes
 
     try:
         game_parameters = command.split('[')[1].split(']')[0].split(',')
-        if len(game_parameters) != 7:
+        if len(game_parameters) != 11:
             raise ValueError("Error parsing parameters for start game command")
 
         logger.info("Starting game with parameters: " + str(game_parameters))
@@ -256,155 +258,6 @@ async def coin_toss_choice_command(client, config_data, discord_messages, coin_t
         await create_message(message.channel, error_message, logger)
         logger.error(error_message)
         raise Exception(error_message)
-
-
-async def message_offense_for_number(client, config_data, discord_messages, message, game_object, home_user_object,
-                                     away_user_object, play_type, username, defense_timeout_called, logger):
-    """
-    Message the offense for a number.
-
-    :param client:
-    :param config_data:
-    :param discord_messages:
-    :param message:
-    :param game_object:
-    :param home_user_object:
-    :param away_user_object:
-    :param play_type:
-    :param username:
-    :param defense_timeout_called:
-    :param logger:
-    :return:
-    """
-
-    embed = await craft_number_request_embed(config_data, message, defense_timeout_called, logger,
-                                             game_object["platformId"])
-
-    if username == home_user_object["username"]:
-        offensive_coach = home_user_object
-    else:
-        offensive_coach = away_user_object
-    offensive_coach_tag = offensive_coach["discordTag"]
-
-    offensive_coach_discord_object = await get_discord_user_by_name(client, offensive_coach_tag, logger)
-
-    if play_type == "KICKOFF":
-        number_request_message = discord_messages["kickingNumberOffenseMessage"].format(
-            message_author=message.author.mention,
-            offensive_coach_discord_object=offensive_coach_discord_object.mention)
-    elif play_type == "NORMAL":
-        number_request_message = discord_messages["normalNumberOffenseMessage"].format(
-            message_author=message.author.mention,
-            offensive_coach_discord_object=offensive_coach_discord_object.mention)
-    elif play_type == "POINT AFTER":
-        number_request_message = discord_messages["pointAfterOffenseMessage"].format(
-            message_author=message.author.mention,
-            offensive_coach_discord_object=offensive_coach_discord_object.mention)
-    else:
-        raise ValueError("Invalid current play type")
-
-    channel = await get_channel_by_id(client, game_object["platformId"], logger)
-    await create_message_with_embed(channel, number_request_message, embed, logger)
-
-
-async def message_defense_for_number(client, config_data, discord_messages, message, game_object, team, logger):
-    """
-    Message the defense for a number.
-
-    :param client: Discord client.
-    :param config_data: Configuration data.
-    :param discord_messages: Discord messages.
-    :param message: Discord message object.
-    :param game_object: Game object.
-    :param team: Team name.
-    :param logger: Logger object.
-    :return: None
-    """
-
-    try:
-        coach = await get_user_by_team(config_data, team, logger)
-        game_id = game_object["gameId"]
-        play_type = game_object["currentPlayType"]
-
-        await update_waiting_on(config_data, game_id, coach["username"], logger)
-
-        embed = await craft_number_request_embed(config_data, message, False, logger)
-        coach_tag = coach["discordTag"]
-        coach_discord_object = await get_discord_user_by_name(client, coach_tag, logger)
-
-        if play_type == "KICKOFF":
-            number_message = discord_messages["kickingNumberDefenseMessage"]
-        elif play_type == "NORMAL":
-            number_message = discord_messages["normalNumberDefenseMessage"]
-        elif play_type == "POINT AFTER":
-            number_message = discord_messages["pointAfterDefenseMessage"]
-        else:
-            ValueError("Invalid current play type")
-            return
-
-        await send_direct_message(coach_discord_object, number_message, logger, embed)
-        logger.info("SUCCESS: Defense was messaged for a number in channel " + str(message.channel.id))
-
-    except ValueError as ve:
-        exception_message = str(ve)
-        await create_message(message.channel, exception_message, logger)
-    except Exception as e:
-        error_message = f"An unexpected error occurred while messaging the defense for a number:\n{e}"
-        await create_message(message.channel, error_message, logger)
-        logger.error(error_message)
-        raise Exception(error_message)
-
-
-async def craft_number_request_embed(config_data, message, defense_called_timeout, logger, channel_id=None):
-    """
-    Create the embed for number requests
-
-    :param config_data:
-    :param message:
-    :param defense_called_timeout:
-    :param logger:
-    :param channel_id:
-    :return:
-    """
-
-    if channel_id is None:
-        game_object = await get_ongoing_game_by_channel_id(config_data, message.channel.id, logger)
-    else:
-        game_object = await get_ongoing_game_by_channel_id(config_data, channel_id, logger)
-    home_score, away_score = int(game_object["homeScore"]), int(game_object["awayScore"])
-    down, yards_to_go = game_object["down"], game_object["yardsToGo"]
-    ball_location = game_object["ballLocation"]
-    possession, home_team, away_team = game_object["possession"], game_object["homeTeam"], game_object["awayTeam"]
-
-    score_text = (f"{home_team} leads {away_team} {home_score}-{away_score}" if home_score > away_score else
-                  f"{away_team} leads {home_team} {home_score}-{away_score}" if home_score < away_score else
-                  f"{home_team} and {away_team} are tied {home_score}-{away_score}")
-
-    down_and_distance = f"{down}{'st' if down == 1 else 'nd' if down == 2 else 'rd' if down == 3 else 'th'} and " \
-                        f"{yards_to_go}"
-
-    yard_line = (f"{away_team} {100 - ball_location}" if ball_location > 50 and possession == home_team else
-                 f"{home_team} {100 - ball_location}" if ball_location > 50 and possession == away_team else
-                 f"{home_team} {ball_location}" if possession == home_team else
-                 f"{away_team} {ball_location}")
-
-    status_message = f"{score_text}\nQ{game_object['quarter']} | {game_object['clock']} | {down_and_distance} " \
-                     f"| :football: {yard_line}"
-
-    embed = discord.Embed(
-        title="Submit a Number",
-        description=f"**Game ID: {game_object['gameId']}**",
-        color=discord.Color.green()
-    )
-    embed.add_field(name="Status", value=status_message, inline=False)
-    embed.add_field(name="Instructions", value="Please submit a number between **1** and **1500**, inclusive",
-                    inline=False)
-    if defense_called_timeout:
-        embed.add_field(name="Timeout", value="The defense has called a timeout", inline=False)
-    embed.add_field(name="Deadline", value=f"You have until {game_object['gameTimer']} to submit a number",
-                    inline=False)
-
-    return embed
 
 
 async def delete_game_command(config_data, message, logger):

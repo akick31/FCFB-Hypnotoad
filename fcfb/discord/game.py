@@ -1,13 +1,13 @@
 import re
 import sys
 
-from fcfb.api.zebstrika_game_plays import submit_defensive_number, submit_offensive_number
-from fcfb.api.zebstrika_games import post_game, get_ongoing_game_by_channel_id, delete_ongoing_game, \
+from fcfb.api.zebstrika.game_plays import submit_defensive_number, submit_offensive_number
+from fcfb.api.zebstrika.games import post_game, get_ongoing_game_by_channel_id, delete_ongoing_game, \
     get_ongoing_game_by_id, update_waiting_on
-from fcfb.api.zebstrika_users import get_user_by_team
-from fcfb.discord.messaging import message_defense_for_number, message_offense_for_number
+from fcfb.api.zebstrika.users import get_user_by_team
 from fcfb.discord.utils import create_channel, create_message, get_discord_user_by_name, delete_channel, \
-    send_direct_message, find_previous_direct_message_embed_and_get_game_id, find_previous_game_channel_embed
+    send_direct_message, find_previous_direct_message_embed_and_get_game_id, find_previous_game_channel_embed, \
+    get_channel_by_id, create_message_with_embed, craft_number_request_embed
 
 sys.path.append("..")
 
@@ -32,7 +32,8 @@ async def start_game(client, config_data, discord_messages, message, game_parame
             raise ValueError("Error parsing parameters for starting a game. Expected 7 parameters.")
 
         # Extract game parameters
-        season, subdivision, home_team, away_team, tv_channel, start_time, location = map(str.strip, game_parameters)
+        home_platform, home_platform_id, away_platform, away_platform_id, season, subdivision, home_team, away_team, \
+            tv_channel, start_time, location = map(str.strip, game_parameters)
 
         # Create game channel
         channel_name = f"{away_team} at {home_team} S{season} {subdivision}"
@@ -46,8 +47,8 @@ async def start_game(client, config_data, discord_messages, message, game_parame
         away_coach_discord_object = await get_discord_user_by_name(client, away_coach_tag, logger)
 
         # Start the game
-        await post_game(config_data, game_channel.id, season, subdivision, home_team, away_team, tv_channel, start_time,
-                        location, logger)
+        await post_game(config_data, game_channel.id, home_platform, home_platform_id, away_platform, away_platform_id, 
+                        season, subdivision, home_team, away_team, tv_channel, start_time, location, logger)
 
         # Prompt for coin toss
         start_game_message = discord_messages["gameStartMessage"].format(
@@ -210,7 +211,7 @@ async def validate_and_submit_defensive_number(client, config_data, discord_mess
         defense_timeout_called = parse_timeout_called(message.content)
 
         # Submit defensive number and update waiting on
-        await submit_defensive_number(config_data, game_id, defensive_number, logger)
+        await submit_defensive_number(config_data, game_id, defensive_number, defense_timeout_called, logger)
         await update_waiting_on(config_data, game_id, username, logger)
 
         # Send confirmation DM and send the prompt for the offensive number
@@ -235,6 +236,118 @@ async def validate_and_submit_defensive_number(client, config_data, discord_mess
         logger.error(exception_message, exc_info=True)
         await create_message(message.channel, exception_message, logger)
         raise Exception(exception_message)
+
+
+async def message_offense_for_number(client, config_data, discord_messages, message, game_object, home_user_object,
+                                     away_user_object, play_type, username, defense_timeout_called, logger):
+    """
+    Message the offense for a number.
+
+    :param client:
+    :param config_data:
+    :param discord_messages:
+    :param message:
+    :param game_object:
+    :param home_user_object:
+    :param away_user_object:
+    :param play_type:
+    :param username:
+    :param defense_timeout_called:
+    :param logger:
+    :return:
+    """
+
+    if username == home_user_object["username"]:
+        offensive_coach = home_user_object
+    else:
+        offensive_coach = away_user_object
+    offensive_coach_tag = offensive_coach["discordTag"]
+
+    offensive_coach_discord_object = await get_discord_user_by_name(client, offensive_coach_tag, logger)
+
+    if play_type == "KICKOFF":
+        number_request_message = discord_messages["kickingNumberOffenseMessage"].format(
+            message_author=message.author.mention,
+            offensive_coach_discord_object=offensive_coach_discord_object.mention)
+    elif play_type == "NORMAL":
+        number_request_message = discord_messages["normalNumberOffenseMessage"].format(
+            message_author=message.author.mention,
+            offensive_coach_discord_object=offensive_coach_discord_object.mention)
+    elif play_type == "POINT AFTER":
+        number_request_message = discord_messages["pointAfterOffenseMessage"].format(
+            message_author=message.author.mention,
+            offensive_coach_discord_object=offensive_coach_discord_object.mention)
+    else:
+        raise ValueError("Invalid current play type")
+
+    channel_id = None
+    if game_object["homePlatform"] == "Discord":
+        channel_id = game_object["homePlatformId"]
+    if game_object["awayPlatform"] == "Discord":
+        channel_id = game_object["awayPlatformId"]
+
+    if channel_id is None:
+        logger.info(f"INFO: Neither user is playing on Discord in game {game_object['gameId']}")
+        return
+
+    embed = await craft_number_request_embed(config_data, message, defense_timeout_called, logger, channel_id)
+    channel = await get_channel_by_id(client, channel_id, logger)
+    await create_message_with_embed(channel, number_request_message, embed, logger)
+
+
+async def message_defense_for_number(client, config_data, discord_messages, message, game_object, team, logger):
+    """
+    Message the defense for a number.
+
+    :param client: Discord client.
+    :param config_data: Configuration data.
+    :param discord_messages: Discord messages.
+    :param message: Discord message object.
+    :param game_object: Game object.
+    :param team: Team name.
+    :param logger: Logger object.
+    :return: None
+    """
+
+    try:
+        if team == game_object["homeTeam"] and game_object["homePlatform"] != "Discord":
+            logger.info("INFO: Home team is not on Discord, not attempting to message")
+            return
+        if team == game_object["awayTeam"] and game_object["awayPlatform"] != "Discord":
+            logger.info("INFO: Away team is not on Discord, not attempting to message")
+            return
+
+        coach = await get_user_by_team(config_data, team, logger)
+        game_id = game_object["gameId"]
+        play_type = game_object["currentPlayType"]
+
+        await update_waiting_on(config_data, game_id, coach["username"], logger)
+
+        embed = await craft_number_request_embed(config_data, message, False, logger)
+        coach_tag = coach["discordTag"]
+        coach_discord_object = await get_discord_user_by_name(client, coach_tag, logger)
+
+        if play_type == "KICKOFF":
+            number_message = discord_messages["kickingNumberDefenseMessage"]
+        elif play_type == "NORMAL":
+            number_message = discord_messages["normalNumberDefenseMessage"]
+        elif play_type == "POINT AFTER":
+            number_message = discord_messages["pointAfterDefenseMessage"]
+        else:
+            ValueError("Invalid current play type")
+            return
+
+        await send_direct_message(coach_discord_object, number_message, logger, embed)
+        logger.info("SUCCESS: Defense was messaged for a number in channel " + str(message.channel.id))
+
+    except ValueError as ve:
+        exception_message = str(ve)
+        await create_message(message.channel, exception_message, logger)
+    except Exception as e:
+        error_message = f"An unexpected error occurred while messaging the defense for a number:\n{e}"
+        await create_message(message.channel, error_message, logger)
+        logger.error(error_message)
+        raise Exception(error_message)
 
 
 def get_opponent_username(game_object, home_user_object, away_user_object):

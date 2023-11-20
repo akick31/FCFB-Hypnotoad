@@ -3,18 +3,19 @@ import requests
 GAME_PLAYS_PATH = "game_plays/"
 
 
-async def submit_defensive_number(config_data, game_id, defensive_number, logger):
+async def submit_defensive_number(config_data, game_id, defensive_number, timeout_called, logger):
     """
     Make API call to submit the defensive number for the play
     :param config_data:
     :param game_id:
     :param defensive_number:
+    :param timeout_called:
     :param logger:
     :return:
     """
 
     try:
-        payload = f"defense_submitted/{game_id}/{defensive_number}"
+        payload = f"defense_submitted/{game_id}/{defensive_number}/{timeout_called}"
         endpoint = config_data['api']['url'] + GAME_PLAYS_PATH + payload
         response = requests.post(endpoint)
 

@@ -3,10 +3,10 @@ import asyncio
 import pathlib
 import logging
 import sys
+import threading
+from fcfb.discord.runner import run_hypnotoad
 
 sys.path.append("..")
-
-from fcfb.discord.runner import run_hypnotoad
 
 
 def hypnotoad(config_data, discord_messages, logger):
@@ -41,4 +41,5 @@ if __name__ == '__main__':
     if not logger.hasHandlers():
         logger.addHandler(stream_handler)
 
+    # Run Hypnotoad
     hypnotoad(config_data, discord_messages, logger)

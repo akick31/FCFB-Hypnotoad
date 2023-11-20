@@ -66,13 +66,17 @@ async def get_ongoing_game_by_id(config_data, game_id, logger):
         return None
 
 
-async def post_game(config_data, channel_id, season, subdivision, home_team, away_team, tv_channel, start_time, location,
-                    logger):
+async def post_game(config_data, channel_id, home_platform, home_platform_id, away_platform, away_platform_id, season, 
+                    subdivision, home_team, away_team, tv_channel, start_time, location, logger):
     """
     Make API call to Zebstrika to start game
 
     :param config_data:
     :param channel_id:
+    :param home_platform:
+    :param home_platform_id:
+    :param away_platform:
+    :param away_platform_id:
     :param season:
     :param subdivision:
     :param home_team:
@@ -85,7 +89,8 @@ async def post_game(config_data, channel_id, season, subdivision, home_team, awa
     """
 
     try:
-        payload = f"start/Discord/{channel_id}/{season}/{subdivision}/{home_team}/{away_team}/{tv_channel}/{start_time}/{location}"
+        payload = f"start/{home_platform}/{home_platform_id}/{away_platform}/{away_platform_id}/{channel_id}/{season}/" \
+                  f"{subdivision}/{home_team}/{away_team}/{tv_channel}/{start_time}/{location}"
         endpoint = config_data['api']['url'] + GAMES_PATH + payload
         response = requests.post(endpoint)
 
