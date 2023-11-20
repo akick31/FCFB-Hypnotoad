@@ -28,14 +28,24 @@ async def start_game(client, config_data, discord_messages, message, game_parame
 
     try:
         # Validate the number of game parameters
-        if len(game_parameters) != 7:
+        if len(game_parameters) != 9:
             raise ValueError("Error parsing parameters for starting a game. Expected 7 parameters.")
 
         # Extract game parameters
-        season, subdivision, home_team, away_team, tv_channel, start_time, location = map(str.strip, game_parameters)
+        season, week, subdivision, home_team, away_team, tv_channel, start_time, location, is_scrimmage = map(str.strip, game_parameters)
+
+        # Update scrimmage
+        if is_scrimmage.lower == "yes":
+            is_scrimmage = "true"
+        elif is_scrimmage.lower == "no":
+            is_scrimmage = "false"
+        else:
+            raise ValueError("Error parsing scrimmage parameter. Expected **yes** or **no**.")
 
         # Create game channel
-        channel_name = f"{away_team} at {home_team} S{season} {subdivision}"
+        channel_name = f"{away_team} at {home_team} S{season} W{week} {subdivision}"
+        if is_scrimmage == "true":
+            channel_name += " (Scrimmage)"
         game_channel = await create_channel(message, channel_name, "Games", logger)
 
         # Get discord tag of the away coach
@@ -46,8 +56,8 @@ async def start_game(client, config_data, discord_messages, message, game_parame
         away_coach_discord_object = await get_discord_user_by_name(client, away_coach_tag, logger)
 
         # Start the game
-        await post_game(config_data, game_channel.id, season, subdivision, home_team, away_team, tv_channel, start_time,
-                        location, logger)
+        await post_game(config_data, game_channel.id, season, week, subdivision, home_team, away_team, tv_channel, start_time,
+                        location, is_scrimmage, logger)
 
         # Prompt for coin toss
         start_game_message = discord_messages["gameStartMessage"].format(

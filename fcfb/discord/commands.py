@@ -94,8 +94,8 @@ async def display_help_command(channel, prefix, logger):
     """
 
     command_list = "start\n"
-    parameters_list = "[season, subdivision, home team, away team, tv channel, start time, location]\n"
-    example_list = prefix + "start 9, FBS, Ohio State, Michigan, ABC, 12:00 PM, War Memorial Stadium]\n"
+    parameters_list = "[season, week, subdivision, home team, away team, tv channel, start time, location]\n"
+    example_list = prefix + "start 9, 1, FBS, Ohio State, Michigan, ABC, 12:00 PM, War Memorial Stadium]\n"
 
     embed = discord.Embed(
         title="Hypnotoad Commands",
@@ -123,7 +123,7 @@ async def start_game_command(client, config_data, discord_messages, command, mes
 
     try:
         game_parameters = command.split('[')[1].split(']')[0].split(',')
-        if len(game_parameters) != 7:
+        if len(game_parameters) != 9:
             raise ValueError("Error parsing parameters for start game command")
 
         logger.info("Starting game with parameters: " + str(game_parameters))
