@@ -1,15 +1,31 @@
 import requests
+import sys
+import logging
+
+from fcfb.main.exceptions import async_exception_handler, ZebstrikaUsersAPIError
 
 USERS_PATH = "users/"
 
+# Set up logging
+logging.basicConfig(format='[%(asctime)s] [%(levelname)s] - %(message)s',
+                    level=logging.INFO)
+logger = logging.getLogger("hypnotoad_logger")
 
-async def get_user_by_team(config_data, team, logger):
+# Add Handlers
+stream_handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] - %(message)s')
+stream_handler.setFormatter(formatter)
+if not logger.hasHandlers():
+    logger.addHandler(stream_handler)
+
+
+@async_exception_handler()
+async def get_user_by_team(config_data, team):
     """
     Get the coach via their team
 
     :param config_data:
     :param team:
-    :param logger:
     :return:
     """
 
@@ -21,11 +37,7 @@ async def get_user_by_team(config_data, team, logger):
             logger.info(f"SUCCESS: Successfully grabbed a user object for {team}")
             return response.json()
         else:
-            exception_message = f"HTTP {response.status_code} response {response.text}"
-            logger.error(exception_message)
-            raise Exception(exception_message)
+            raise ZebstrikaUsersAPIError(f"HTTP {response.status_code} response {response.text}")
 
     except Exception as e:
-        error_message = f"- An unexpected error occurred while getting user by team: {e}"
-        logger.error(error_message)
-        raise Exception(error_message)
+        raise Exception(f"{e}")

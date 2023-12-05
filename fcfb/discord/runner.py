@@ -1,20 +1,33 @@
 import discord
 import sys
+import logging
 
+from fcfb.main.exceptions import async_exception_handler
 from fcfb.discord.commands import parse_commands, parse_direct_message_number_submission
 from fcfb.discord.game import validate_and_submit_offensive_number
-from fcfb.discord.utils import check_if_channel_is_game_channel
+from fcfb.discord.utils import check_if_location_is_game_thread
 
 sys.path.append("..")
 
+# Set up logging
+logging.basicConfig(format='[%(asctime)s] [%(levelname)s] - %(message)s',
+                    level=logging.INFO)
+logger = logging.getLogger("hypnotoad_logger")
 
-def run_hypnotoad(config_data, discord_messages, logger):
+# Add Handlers
+stream_handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] - %(message)s')
+stream_handler.setFormatter(formatter)
+if not logger.hasHandlers():
+    logger.addHandler(stream_handler)
+
+
+def run_hypnotoad(config_data, discord_messages):
     """
     Run Hypnotoad
 
     :param config_data:
     :param discord_messages:
-    :param logger:
     :return:
     """
 
@@ -29,23 +42,26 @@ def run_hypnotoad(config_data, discord_messages, logger):
     client = discord.Client(intents=intents)
 
     @client.event
+    @async_exception_handler()
     async def on_message(message):
         if message.author.bot:
             return
 
         if message.content.startswith(prefix):
-            await parse_commands(client, config_data, discord_messages, prefix, message, logger)
+            await parse_commands(client, config_data, discord_messages, prefix, message)
         elif isinstance(message.channel, discord.DMChannel):
-            await parse_direct_message_number_submission(client, config_data, discord_messages, message, logger)
-        elif check_if_channel_is_game_channel(config_data, message, logger):
-            await validate_and_submit_offensive_number(client, config_data, discord_messages, message, logger)
+            await parse_direct_message_number_submission(client, config_data, discord_messages, message)
+
+        elif await check_if_location_is_game_thread(config_data, message):
+            await validate_and_submit_offensive_number(client, config_data, discord_messages, message)
 
     @client.event
+    @async_exception_handler()
     async def on_ready():
-        print('------')
-        print('Logged in as')
-        print(client.user.name)
-        print(client.user.id)
-        print('------')
+        logger.info('------')
+        logger.info('Logged in as')
+        logger.info(client.user.name)
+        logger.info(client.user.id)
+        logger.info('------')
 
     client.run(token)

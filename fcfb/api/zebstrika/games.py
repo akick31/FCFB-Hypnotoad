@@ -1,45 +1,57 @@
 import requests
+import sys
+import logging
+
+from fcfb.main.exceptions import async_exception_handler, ZebstrikaGamesAPIError
 
 GAMES_PATH = "games/"
 
+# Set up logging
+logging.basicConfig(format='[%(asctime)s] [%(levelname)s] - %(message)s',
+                    level=logging.INFO)
+logger = logging.getLogger("hypnotoad_logger")
 
-async def get_ongoing_game_by_channel_id(config_data, channel_id, logger):
+# Add Handlers
+stream_handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] - %(message)s')
+stream_handler.setFormatter(formatter)
+if not logger.hasHandlers():
+    logger.addHandler(stream_handler)
+
+
+@async_exception_handler()
+async def get_ongoing_game_by_thread_id(config_data, thread_id):
     """
-    Make API call to get the ongoing game via the channel ID
+    Make API call to get the ongoing game via the thread ID
     :param config_data:
-    :param channel_id:
-    :param logger:
+    :param thread_id:
     :return:
     """
 
     try:
-        payload = f"ongoing/discord/{channel_id}"
+        payload = f"ongoing/discord/{thread_id}"
         endpoint = config_data['api']['url'] + GAMES_PATH + payload
         response = requests.get(endpoint)
 
         if response.status_code == 200 or response.status_code == 201:
-            logger.info(f"SUCCESS: Grabbed the ongoing game for {channel_id}")
+            logger.info(f"SUCCESS: Grabbed the ongoing game for {thread_id}")
             return response.json()
         elif response.status_code == 404:
-            logger.info(f"SUCCESS: No ongoing game for {channel_id}")
+            logger.info(f"SUCCESS: No ongoing game for {thread_id}")
             return None
         else:
-            exception_message = f"HTTP {response.status_code} response {response.text}"
-            logger.error(exception_message)
-            raise Exception(exception_message)
+            raise ZebstrikaGamesAPIError(f"HTTP {response.status_code} response {response.text}")
 
     except Exception as e:
-        error_message = f"- An unexpected error occurred while getting ongoing game by channel ID: {e}"
-        logger.error(error_message)
-        raise Exception(error_message)
+        raise Exception(f"{e}")
 
 
-async def get_ongoing_game_by_id(config_data, game_id, logger):
+@async_exception_handler()
+async def get_ongoing_game_by_id(config_data, game_id):
     """
     Make API call to get the ongoing game via the game ID
     :param config_data:
     :param game_id:
-    :param logger:
     :return:
     """
 
@@ -54,20 +66,16 @@ async def get_ongoing_game_by_id(config_data, game_id, logger):
         elif response.status_code == 404:
             logger.info(f"SUCCESS: No ongoing game for game id {game_id}")
         else:
-            exception_message = f"HTTP {response.status_code} response {response.text}"
-            logger.error(exception_message)
-            raise Exception(exception_message)
+            raise ZebstrikaGamesAPIError(f"HTTP {response.status_code} response {response.text}")
         return None
 
     except Exception as e:
-        error_message = f"- An unexpected error occurred while getting an ongoing game by game ID: {e}"
-        logger.error(error_message)
-        raise Exception(error_message)
-        return None
+        raise Exception(f"{e}")
 
 
+@async_exception_handler()
 async def post_game(config_data, channel_id, season, week, subdivision, home_team, away_team, tv_channel, start_time,
-                    location, is_scrimmage, logger):
+                    location, is_scrimmage):
     """
     Make API call to Zebstrika to start game
 
@@ -82,7 +90,6 @@ async def post_game(config_data, channel_id, season, week, subdivision, home_tea
     :param start_time:
     :param location:
     :param is_scrimmage:
-    :param logger:
     :return:
     """
 
@@ -97,24 +104,20 @@ async def post_game(config_data, channel_id, season, week, subdivision, home_tea
             logger.info(f"SUCCESS: Successfully started a game at {channel_id}. {home_team} vs {away_team} in S{season} {subdivision}")
             return response.status_code
         else:
-            exception_message = f"HTTP {response.status_code} response {response.text}"
-            logger.error(exception_message)
-            raise Exception(exception_message)
+            raise ZebstrikaGamesAPIError(f"HTTP {response.status_code} response {response.text}")
 
     except Exception as e:
-        error_message = f"- An unexpected error occurred while posting a game: {e}"
-        logger.error(error_message)
-        raise Exception(error_message)
+        raise Exception(f"{e}")
 
 
-async def run_coin_toss(config_data, game_id, coin_toss_choice, logger):
+@async_exception_handler()
+async def run_coin_toss(config_data, game_id, coin_toss_choice):
     """
     Make API call to Zebstrika to run coin toss
 
     :param config_data:
     :param game_id:
     :param coin_toss_choice:
-    :param logger:
     :return:
     """
 
@@ -127,24 +130,20 @@ async def run_coin_toss(config_data, game_id, coin_toss_choice, logger):
             logger.info(f"SUCCESS: Successfully ran the coin toss for {game_id}")
             return response.json()
         else:
-            exception_message = f"HTTP {response.status_code} response {response.text}"
-            logger.error(exception_message)
-            raise Exception(exception_message)
+            raise ZebstrikaGamesAPIError(f"HTTP {response.status_code} response {response.text}")
 
     except Exception as e:
-        error_message = f"- An unexpected error occurred while running a coin toss: {e}"
-        logger.error(error_message)
-        raise Exception(error_message)
+        raise Exception(f"{e}")
 
 
-async def update_coin_toss_choice(config_data, game_id, coin_toss_choice, logger):
+@async_exception_handler()
+async def update_coin_toss_choice(config_data, game_id, coin_toss_choice):
     """
     Make API call to Zebstrika to update the coin toss choice to receive or defer
 
     :param config_data:
     :param game_id:
     :param coin_toss_choice:
-    :param logger:
     :return:
     """
 
@@ -157,24 +156,20 @@ async def update_coin_toss_choice(config_data, game_id, coin_toss_choice, logger
             logger.info(f"SUCCESS: Updated the coin toss choice for {game_id} to {coin_toss_choice}")
             return response.json()
         else:
-            exception_message = f"HTTP {response.status_code} response {response.text}"
-            logger.error(exception_message)
-            raise Exception(exception_message)
+            raise ZebstrikaGamesAPIError(f"HTTP {response.status_code} response {response.text}")
 
     except Exception as e:
-        error_message = f"- An unexpected error occurred while updating the coin toss choice: {e}"
-        logger.error(error_message)
-        raise Exception(error_message)
+        raise Exception(f"{e}")
 
 
-async def update_waiting_on(config_data, game_id, username, logger):
+@async_exception_handler()
+async def update_waiting_on(config_data, game_id, username):
     """
     Make API call to Zebstrika to update the team is waiting on using the coach's username
 
     :param config_data:
     :param game_id:
     :param username:
-    :param logger:
     :return:
     """
 
@@ -187,17 +182,14 @@ async def update_waiting_on(config_data, game_id, username, logger):
             logger.info(f"SUCCESS: Updated the team the game is waiting on for game {game_id} to {username}")
             return response.json()
         else:
-            exception_message = f"HTTP {response.status_code} response {response.text}"
-            logger.error(exception_message)
-            raise Exception(exception_message)
+            raise ZebstrikaGamesAPIError(f"HTTP {response.status_code} response {response.text}")
 
     except Exception as e:
-        error_message = f"- An unexpected error occurred while updating the team that the game is waiting on: {e}"
-        logger.error(error_message)
-        raise Exception(error_message)
+        raise Exception(f"{e}")
 
 
-async def delete_ongoing_game(config_data, game_id, logger):
+@async_exception_handler()
+async def delete_ongoing_game(config_data, game_id):
     """
     Make API call to Zebstrika to delete the game
 
@@ -216,11 +208,7 @@ async def delete_ongoing_game(config_data, game_id, logger):
             logger.info(f"SUCCESS: Delete game {game_id}")
             return response.status_code
         else:
-            exception_message = f"HTTP {response.status_code} response {response.text}"
-            logger.error(exception_message)
-            raise Exception(exception_message)
+            raise ZebstrikaGamesAPIError(f"HTTP {response.status_code} response {response.text}")
 
     except Exception as e:
-        error_message = f"- An unexpected error occurred while deleting the game: {e}"
-        logger.error(error_message)
-        raise Exception(error_message)
+        raise Exception(f"{e}")

@@ -1,16 +1,32 @@
 import requests
+import sys
+import logging
+
+from fcfb.main.exceptions import async_exception_handler, ZebstrikaGamePlaysAPIError
 
 GAME_PLAYS_PATH = "game_plays/"
 
+# Set up logging
+logging.basicConfig(format='[%(asctime)s] [%(levelname)s] - %(message)s',
+                    level=logging.INFO)
+logger = logging.getLogger("hypnotoad_logger")
 
-async def submit_defensive_number(config_data, game_id, defensive_number, timeout_called, logger):
+# Add Handlers
+stream_handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] - %(message)s')
+stream_handler.setFormatter(formatter)
+if not logger.hasHandlers():
+    logger.addHandler(stream_handler)
+
+
+@async_exception_handler()
+async def submit_defensive_number(config_data, game_id, defensive_number, timeout_called):
     """
     Make API call to submit the defensive number for the play
     :param config_data:
     :param game_id:
     :param defensive_number:
     :param timeout_called:
-    :param logger:
     :return:
     """
 
@@ -23,17 +39,15 @@ async def submit_defensive_number(config_data, game_id, defensive_number, timeou
             logger.info(f"SUCCESS: Submitted defensive number for game {game_id}")
             return response.status_code
         else:
-            exception_message = f"HTTP {response.status_code} response {response.text}"
-            logger.error(exception_message)
-            raise Exception(exception_message)
+            raise ZebstrikaGamePlaysAPIError(f"HTTP {response.status_code} response {response.text}")
 
     except Exception as e:
-        error_message = f"- An unexpected error occurred while submitting a defensive number: {e}"
-        logger.error(error_message)
-        raise Exception(error_message)
+        raise Exception(f"{e}")
 
 
-async def submit_offensive_number(config_data, game_id, play_id, offensive_number, play, runoff_type, offensive_timeout_called, defensive_timeout_called, logger):
+@async_exception_handler()
+async def submit_offensive_number(config_data, game_id, play_id, offensive_number, play, runoff_type,
+                                  offensive_timeout_called, defensive_timeout_called):
     """
     Make API call to submit the offensive number for the play, run the play, and return the result
 
@@ -45,7 +59,6 @@ async def submit_offensive_number(config_data, game_id, play_id, offensive_numbe
     :param runoff_type:
     :param offensive_timeout_called:
     :param defensive_timeout_called:
-    :param logger:
     :return:
     """
 
@@ -61,11 +74,7 @@ async def submit_offensive_number(config_data, game_id, play_id, offensive_numbe
             logger.info(f"SUCCESS: Play was run successfully {game_id}")
             return response.json()
         else:
-            exception_message = f"HTTP {response.status_code} response {response.text}"
-            logger.error(exception_message)
-            raise Exception(exception_message)
+            raise ZebstrikaGamePlaysAPIError(f"HTTP {response.status_code} response {response.text}")
 
     except Exception as e:
-        error_message = f"- An unexpected error occurred while running the play: {e}"
-        logger.error(error_message)
-        raise Exception(error_message)
+        raise Exception(f"{e}")
