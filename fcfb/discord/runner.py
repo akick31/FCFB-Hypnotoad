@@ -3,8 +3,7 @@ import sys
 import logging
 
 from fcfb.main.exceptions import async_exception_handler
-from fcfb.discord.commands import parse_commands, parse_direct_message_number_submission
-from fcfb.discord.game import validate_and_submit_offensive_number
+from fcfb.discord.commands import parse_game_thread_commands, parse_commands, parse_direct_message_number_submission
 from fcfb.discord.utils import check_if_location_is_game_thread
 
 sys.path.append("..")
@@ -53,7 +52,7 @@ def run_hypnotoad(config_data, discord_messages):
             await parse_direct_message_number_submission(client, config_data, discord_messages, message)
 
         elif await check_if_location_is_game_thread(config_data, message):
-            await validate_and_submit_offensive_number(client, config_data, discord_messages, message)
+            await parse_game_thread_commands(client, config_data, discord_messages, message)
 
     @client.event
     @async_exception_handler()

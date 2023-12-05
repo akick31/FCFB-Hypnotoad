@@ -180,7 +180,7 @@ async def update_waiting_on(config_data, game_id, username):
 
         if response.status_code == 200 or response.status_code == 201:
             logger.info(f"SUCCESS: Updated the team the game is waiting on for game {game_id} to {username}")
-            return response.json()
+            return username
         else:
             raise ZebstrikaGamesAPIError(f"HTTP {response.status_code} response {response.text}")
 

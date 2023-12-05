@@ -25,14 +25,13 @@ async def get_discord_user_by_name(client, name):
 
     :param client:
     :param name:
-    :param logger:
     :return:
     """
 
     try:
         user = discord.utils.get(client.users, name=name)
         if user is None:
-            raise Exception("User not found")
+            raise DiscordAPIError("User not found")
         return user
     except Exception as e:
         raise DiscordAPIError(f"There was an issue getting the Discord user object, {e}")
@@ -55,18 +54,84 @@ async def create_game_thread(client, channel_id, home_team, away_team, season, s
     """
 
     try:
-        thread_name = f"{away_team} at {home_team} | Week {week} | {subdivision}"
+        thread_name = f'{away_team} at {home_team}'
         game_channel = await get_channel_by_id(client, channel_id)
-        game_thread = await game_channel.create_thread(thread_name)
-        season_tag = f"Season {season}"
-        week_tag = f"Week {week}"
-        scrimmage_tag = "Scrimmage" if is_scrimmage == 'true' else ""
+        season_tag = f'Season {season}'
+        week_tag = f'Week {week}'
+        scrimmage_tag = 'Scrimmage' if is_scrimmage == 'true' else ''
         subdivision_tag = subdivision
-        game_thread.edit(applied_tags=[season_tag, week_tag, scrimmage_tag, subdivision_tag])
+        tags = [season_tag, week_tag, scrimmage_tag, subdivision_tag]
+        tags_to_apply = await verify_tags_exist(game_channel, tags)
+
+        game_thread = await game_channel.create_thread(
+            name=thread_name,
+            content="",
+            applied_tags=tags_to_apply)
         logger.info("Thread named " + thread_name + " created")
         return game_thread
+    except DiscordAPIError as dae:
+        raise dae
     except Exception as e:
         raise DiscordAPIError(f"There was an issue creating the thread, {e}")
+
+
+@async_exception_handler()
+async def verify_tags_exist(channel, tags):
+    """
+    Verify tags exist and create if they do not
+
+    Return the list of tags to apply to the thread
+
+    :param channel:
+    :param tags:
+    :return:
+    """
+
+    try:
+        # Get the current tag list
+        available_tags = channel.available_tags
+        available_tag_names = []
+        for tag in available_tags:
+            available_tag_names.append(tag.name)
+
+        # Create any tags that do not exist
+        for tag in tags:
+            if tag not in available_tag_names:
+                await create_tag(channel, tag)
+
+        # Get the update tag list
+        available_tags = channel.available_tags
+        available_tag_names = []
+        for tag in available_tags:
+            available_tag_names.append(tag.name)
+
+        # Create the list of tags to apply to the thread
+        tags_to_apply = []
+        for tag in available_tags:
+            if tag.name in tags:
+                tags_to_apply.append(tag)
+        return tags_to_apply
+    except DiscordAPIError as dae:
+        raise dae
+    except Exception as e:
+        raise DiscordAPIError(f"There was an issue verifying the tags exist, {e}")
+
+
+@async_exception_handler()
+async def create_tag(channel, tag):
+    """
+    Create a tag
+
+    :param channel:
+    :param tag:
+    :return:
+    """
+
+    try:
+        await channel.create_tag(name=tag)
+        logger.info(f"Tag named {tag} created")
+    except Exception as e:
+        raise DiscordAPIError(f"There was an issue creating the tag, {e}")
 
 
 @async_exception_handler()
@@ -98,7 +163,7 @@ async def get_category_by_name(message, category_name):
     try:
         category = discord.utils.get(message.guild.categories, name=category_name)
         if category is None:
-            raise Exception("Category not found")
+            raise DiscordAPIError("Category not found")
         return category
     except Exception as e:
         raise DiscordAPIError(f"There was an issue getting the category, {e}")
@@ -116,26 +181,26 @@ async def get_channel_by_id(client, channel_id):
     try:
         thread = client.get_channel(int(channel_id))
         if thread is None:
-            raise Exception(f"Channel with ID {channel_id} not found")
+            raise DiscordAPIError(f"Channel with ID {channel_id} not found")
         return thread
     except Exception as e:
         raise DiscordAPIError(f"There was an issue getting the channel by its ID, {e}")
 
 
 @async_exception_handler()
-async def get_thread_by_id(message, thread_id):
+async def get_thread_by_id(client, thread_id):
     """
     Get a Discord thread by ID
 
-    :param message: Discord message object
+    :param client: Discord client object
     :param thread_id: ID of the thread to retrieve
     :return: Channel object or None if not found
     """
 
     try:
-        thread = message.guild.get_thread(int(thread_id))
+        thread = await client.fetch_channel(int(thread_id))
         if thread is None:
-            raise Exception(f"Thread with ID {thread_id} not found")
+            raise DiscordAPIError(f"Thread with ID {thread_id} not found")
         return thread
     except Exception as e:
         raise DiscordAPIError(f"There was an issue getting the thread by its ID, {e}")
@@ -200,24 +265,17 @@ async def send_direct_message(user, message_text, embed=None):
 
 
 @async_exception_handler()
-async def craft_number_request_embed(config_data, message, defense_called_timeout, thread_id=None):
+async def craft_embed(game_object):
     """
-    Create the embed for number requests
+    Create the embed
 
-    :param config_data:
-    :param message:
-    :param defense_called_timeout:
-    :param thread_id:
+    :param game_object
     :return:
     """
 
-    if thread_id is None:
-        game_object = await get_ongoing_game_by_thread_id(config_data, message.channel.id)
-    else:
-        game_object = await get_ongoing_game_by_thread_id(config_data, thread_id)
     home_score, away_score = int(game_object["homeScore"]), int(game_object["awayScore"])
-    down, yards_to_go = game_object["down"], game_object["yardsToGo"]
-    ball_location = game_object["ballLocation"]
+    down, yards_to_go = int(game_object["down"]), int(game_object["yardsToGo"])
+    ball_location = int(game_object["ballLocation"])
     possession, home_team, away_team = game_object["possession"], game_object["homeTeam"], game_object["awayTeam"]
 
     score_text = (f"{home_team} leads {away_team} {home_score}-{away_score}" if home_score > away_score else
@@ -236,16 +294,12 @@ async def craft_number_request_embed(config_data, message, defense_called_timeou
                      f"| :football: {yard_line}"
 
     embed = discord.Embed(
-        title="Submit a Number",
+        title=f"{away_team} at {home_team}",
         description=f"**Game ID: {game_object['gameId']}**",
         color=discord.Color.green()
     )
     embed.add_field(name="Status", value=status_message, inline=False)
-    embed.add_field(name="Instructions", value="Please submit a number between **1** and **1500**, inclusive",
-                    inline=False)
-    if defense_called_timeout:
-        embed.add_field(name="Timeout", value="The defense has called a timeout", inline=False)
-    embed.add_field(name="Deadline", value=f"You have until {game_object['gameTimer']} to submit a number",
+    embed.add_field(name="Deadline", value=f"{game_object['waitingOn']} has until {game_object['gameTimer']} to submit a number",
                     inline=False)
 
     return embed
@@ -264,7 +318,7 @@ async def check_if_location_is_game_thread(config_data, message):
     try:
         # Cut down on API calls by only looking in channels in the games thread
         if isinstance(message.channel, discord.Thread):
-            channel_name = message.channel.name
+            channel_name = message.channel.parent.name
             if channel_name != "games":
                 return False
         else:
@@ -279,25 +333,23 @@ async def check_if_location_is_game_thread(config_data, message):
 
 
 @async_exception_handler()
-async def find_previous_game_channel_embed(client, message):
+async def find_previous_game_channel_prompt(client, message):
     """
-    Find the previous embed from the bot asking the user to submit a number and get the game id from it
+    Find the previous message from the bot asking the user to submit a number and get the game id from it
 
     :param client:
     :param message:
     :return:
     """
 
+    prev_message_content = ""
     async for prev_message in message.channel.history(limit=100):
         if prev_message.author.id == client.user.id and prev_message.id != message.id:
             # Check if the previous bot message has an embed with the specified title
-            if prev_message.embeds and prev_message.embeds[0].title == "Submit a Number":
-                embed_data = prev_message.embeds[0].to_dict()
+            if "has submitted their defensive number" in prev_message.content:
                 prev_message_content = prev_message.content
                 break  # Exit the loop once the desired message is found
-    else:
-        embed_data = None  # If the loop completes without finding the message, set game_id to None
-    return embed_data, prev_message_content
+    return prev_message_content
 
 
 @async_exception_handler()
@@ -310,10 +362,11 @@ async def find_previous_direct_message_embed_and_get_game_id(client, message):
     :return:
     """
 
+    prev_message_content = ""
     async for prev_message in message.channel.history(limit=100):
         if prev_message.author.id == client.user.id and prev_message.id != message.id:
             # Check if the previous bot message has an embed with the specified title
-            if prev_message.embeds and prev_message.embeds[0].title == "Submit a Number":
+            if prev_message.embeds:
                 embed_data = prev_message.embeds[0].to_dict()
                 game_id = embed_data['description'] if 'description' in embed_data else None
                 prev_message_content = prev_message.content

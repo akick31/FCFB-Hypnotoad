@@ -8,9 +8,9 @@ from fcfb.api.zebstrika.games import post_game, get_ongoing_game_by_thread_id, d
     get_ongoing_game_by_id, update_waiting_on
 from fcfb.api.zebstrika.users import get_user_by_team
 from fcfb.discord.utils import create_game_thread, create_message, get_discord_user_by_name, delete_thread, \
-    send_direct_message, find_previous_direct_message_embed_and_get_game_id, find_previous_game_channel_embed, \
-    get_thread_by_id, create_message_with_embed, craft_number_request_embed
-from fcfb.main.exceptions import GameError, DiscordAPIError
+    send_direct_message, find_previous_direct_message_embed_and_get_game_id, find_previous_game_channel_prompt, \
+    get_thread_by_id, craft_embed
+from fcfb.main.exceptions import GameError
 
 sys.path.append("..")
 
@@ -68,19 +68,25 @@ async def start_game(client, config_data, discord_messages, game_parameters):
         away_coach_discord_object = await get_discord_user_by_name(client, away_coach_tag)
 
         # Start the game
-        await post_game(config_data, game_thread.id, season, week, subdivision, home_team, away_team, tv_channel,
+        await post_game(config_data, game_thread.thread.id, season, week, subdivision, home_team, away_team, tv_channel,
                         start_time, location, is_scrimmage)
+
+        # Update the game info message at the top of the thread
+        game_object = await get_ongoing_game_by_thread_id(config_data, game_thread.thread.id)
+        embed = await craft_embed(game_object)
+        game_info_message = game_thread.thread.starter_message
+        await game_info_message.edit(embed=embed)
 
         # Prompt for coin toss
         start_game_message = discord_messages["gameStartMessage"].format(
             away_coach_discord_object=away_coach_discord_object.mention)
 
-        await create_message(game_thread, start_game_message)
+        await create_message(game_thread.thread, start_game_message)
 
     except Exception as e:
         # If an error occurs, delete the game channel if it was created
         if game_thread is not None:
-            await delete_game(config_data, game_thread)
+            await delete_game(config_data, game_thread.thread)
         raise Exception(e)
 
 
@@ -165,6 +171,17 @@ async def validate_and_submit_offensive_number(client, config_data, discord_mess
         # Print the play result
         await create_message(message.channel, play_result)
 
+        # Update the embed
+        game_object = await get_ongoing_game_by_thread_id(config_data, message.channel.id)
+        embed = await craft_embed(game_object)
+        thread = await get_thread_by_id(client, message.channel.id)
+        game_info_message = None
+        async for message in thread.history(oldest_first=True):
+            game_info_message = message
+            break
+
+        await game_info_message.edit(embed=embed)
+
         # Send the prompt for the next number
         if play_result["possession"] == "home":
             await message_defense_for_number(client, config_data, discord_messages, message, game_object,
@@ -211,7 +228,7 @@ async def validate_and_submit_defensive_number(client, config_data, discord_mess
 
         # Submit defensive number and update waiting on
         await submit_defensive_number(config_data, game_id, defensive_number, defense_timeout_called)
-        await update_waiting_on(config_data, game_id, username)
+        waiting_on = await update_waiting_on(config_data, game_id, username)
 
         # Send confirmation DM and send the prompt for the offensive number
         if defense_timeout_called:
@@ -222,7 +239,7 @@ async def validate_and_submit_defensive_number(client, config_data, discord_mess
                                                       f"{defensive_number}.")
 
         # Send the prompt for the offensive number
-        await message_offense_for_number(client, config_data, discord_messages, message, game_object, home_user_object,
+        await message_offense_for_number(client, waiting_on, discord_messages, message, game_object, home_user_object,
                                          away_user_object, play_type, username, defense_timeout_called)
 
     except Exception as e:
@@ -230,13 +247,13 @@ async def validate_and_submit_defensive_number(client, config_data, discord_mess
 
 
 @async_exception_handler()
-async def message_offense_for_number(client, config_data, discord_messages, message, game_object, home_user_object,
+async def message_offense_for_number(client, waiting_on, discord_messages, message, game_object, home_user_object,
                                      away_user_object, play_type, username, defense_timeout_called):
     """
     Message the offense for a number.
 
     :param client:
-    :param config_data:
+    :param waiting_on:
     :param discord_messages:
     :param message:
     :param game_object:
@@ -282,9 +299,27 @@ async def message_offense_for_number(client, config_data, discord_messages, mess
             logger.info(f"INFO: Neither user is playing on Discord in game {game_object['gameId']}")
             return
 
-        embed = await craft_number_request_embed(config_data, message, defense_timeout_called, thread_id)
-        thread = await get_thread_by_id(message, thread_id)
-        await create_message_with_embed(thread, number_request_message, embed)
+        # Update waiting on
+        game_object["waitingOn"] = waiting_on
+
+        embed = await craft_embed(game_object)
+        thread = await get_thread_by_id(client, thread_id)
+
+        # Edit the game info message at the top of the thread
+        game_info_message = None
+        async for message in thread.history(oldest_first=True):
+            game_info_message = message
+            break
+
+        await game_info_message.edit(embed=embed)
+
+        # Append if there was a timeout and the timer
+        if defense_timeout_called:
+            number_request_message += "\nThe defense has called a timeout"
+        number_request_message += f"\n\n You have until {game_object['gameTimer']} to submit a number"
+
+        # Send the play result
+        await create_message(thread, number_request_message)
     except Exception as e:
         raise Exception(e)
 
@@ -317,7 +352,7 @@ async def message_defense_for_number(client, config_data, discord_messages, mess
 
         await update_waiting_on(config_data, game_id, coach["username"])
 
-        embed = await craft_number_request_embed(config_data, message, False)
+        embed = await craft_embed(game_object)
         coach_tag = coach["discordTag"]
         coach_discord_object = await get_discord_user_by_name(client, coach_tag)
 
@@ -391,7 +426,7 @@ def validate_waiting_on(message, game_object, home_user_object, away_user_object
     user_object = home_user_object if waiting_on_username == home_user_object["username"] else away_user_object
 
     if user_object["discordTag"] != message.author.name:
-        raise GameError(f"I am not waiting on a number from you currently. Currently waiting on a number from "
+        raise GameError(f"I am not waiting on a number from you currently. Currently waiting on a response from "
                         f"{waiting_on_username}")
 
 
@@ -467,12 +502,12 @@ def parse_normal_play(message_content):
     :return:
     """
 
-    play_type_match = re.search(r'\b(run|raise Exception(e)|spike|kneel|field goal|punt)\b', message_content, flags=re.IGNORECASE)
+    play_type_match = re.search(r'\b(run|pass|spike|kneel|field goal|punt)\b', message_content, flags=re.IGNORECASE)
 
     if play_type_match:
         return play_type_match.group().lower()
     else:
-        raise GameError("There was not a valid play in the message, please select **run**, **raise Exception(e)**, **spike**, "
+        raise GameError("There was not a valid play in the message, please select **run**, **pass**, **spike**, "
                         "**kneel**, **field goal**, or **punt** and try again")
 
 
@@ -549,9 +584,9 @@ async def parse_defensive_timeout_called(client, message):
     :return:
     """
 
-    embed_data, prev_message_content = await find_previous_game_channel_embed(client, message)
+    prev_message_content = await find_previous_game_channel_prompt(client, message)
 
-    if "Timeout" in embed_data:
+    if "The defense has called a timeout" in prev_message_content:
         return True
     else:
         return False

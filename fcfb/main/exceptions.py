@@ -1,7 +1,6 @@
 import functools
 import logging
 import sys
-import discord
 
 # Set up logging
 logging.basicConfig(format='[%(asctime)s] [%(levelname)s] - %(message)s',
