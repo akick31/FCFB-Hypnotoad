@@ -4,7 +4,7 @@ import logging
 
 from fcfb.discord.game import start_game, delete_game, validate_and_submit_defensive_number, \
     message_defense_for_number, get_user_objects, validate_and_submit_offensive_number
-from fcfb.discord.utils import create_message, create_message_with_embed, get_discord_user_by_name
+from fcfb.discord.utils import create_message, get_discord_user_by_name
 from fcfb.api.zebstrika.games import get_ongoing_game_by_thread_id, run_coin_toss, update_coin_toss_choice, \
     update_waiting_on
 from fcfb.api.zebstrika.users import get_user_by_team
@@ -133,7 +133,7 @@ async def display_help_command(channel, prefix):
     embed.add_field(name="Command", value=command_list, inline=True)
     embed.add_field(name="Parameters", value=parameters_list, inline=True)
     embed.add_field(name="Example", value=example_list, inline=True)
-    await create_message_with_embed(channel, "", embed)
+    await create_message(channel, "", embed)
     logger.info("SUCCESS: Help command processed")
 
 

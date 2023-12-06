@@ -4,8 +4,314 @@
   "gameStartMessage": "Hello and welcome to Fake College Football!\n---------------\n\nIt is time for the coin toss! {away_coach_discord_object}, you're away, call **heads** or **tails** in the air",
   "kickingNumberDefenseMessage": "The previous play is in, you are up and set to receive the kickoff. Please submit a number between **1** and **1500**",
   "normalNumberDefenseMessage": "The previous play is in, you are up on defense. Please submit a number between **1** and **1500**\"",
-  "pointAfterDefenseMessage": "The previous play is in, your opponent scored and you are up on defense for the point after attempt. . Please submit a number between **1** and **1500**\"",
+  "pointAfterDefenseMessage": "The previous play is in, your opponent scored and you are up on defense for the point after attempt. . Please submit a number between **1** and **1500**",
   "kickingNumberOffenseMessage": "{message_author} has submitted their kickoff number, {offensive_coach_discord_object} you're up to kick!\n\n Please submit a number between **1** and **1500** along with either **normal**, **onside**, or **squib**",
   "normalNumberOffenseMessage": "{message_author} has submitted their defensive number, {offensive_coach_discord_object} you're up!\n\n Please submit a number between **1** and **1500** along with either **pass** or **run**",
-  "pointAfterOffenseMessage": "{message_author} has submitted their defensive number, {offensive_coach_discord_object} you just scored!\n\n Please submit a number between **1** and **1500** along with either **block** or **return**"
+  "pointAfterOffenseMessage": "{message_author} has submitted their defensive number, {offensive_coach_discord_object} you just scored!\n\n Please submit a number between **1** and **1500** along with either **block** or **return**",
+  "resultMessage": {
+    "KICKOFF NORMAL": {
+      "5": {
+        "KICKOFF": {
+          "1": "The {defensive_team} returner takes the ball out of the endzone but gets dropped quickly at the 5 yard line!",
+          "2": "The {defensive_team} returner attempts to return the kick from deep in the endzone but is tackled at the 5 yard line!",
+          "3": "The {defensive_team} returner tries to escape the endzone but is immediately swarmed by the kicking team, down at the 5 yard line!"
+        }
+      },
+      "10": {
+          "KICKOFF": {
+          "1": "The {defensive_team} returner takes the ball out of the endzone and tries to find the corner but steps out at the 10 yard line!",
+          "2": "The {defensive_team} returner returns the kick from the endzone, but a well-positioned defender pushes them out at the 10 yard line!",
+          "3": "The {defensive_team} returner makes a move to the outside but steps out of bounds at the 10 yard line."
+          }
+      },
+      "20": {
+          "KICKOFF": {
+          "1": "The {defensive_team} returner takes the ball out of the endzone and gets met at the 20 yard line! They shouldn't have taken it out, but it didn't hurt them too much.",
+          "2": "The {defensive_team} returner decides to run the ball out from the endzone but is immediately tackled at the 20 yard line.",
+          "3": "The {defensive_team} returner attempts to return the kick but is met by a wall of defenders at the 20 yard line."
+          }
+      },
+      "TOUCHBACK": {
+          "KICKOFF": {
+          "1": "The {defensive_team} return man waves his hand in the air and catches the ball safely for a touchback",
+          "2": "The {defensive_team} returner takes a knee in the endzone for a touchback"
+          }
+      },
+      "30": {
+          "KICKOFF": {
+          "1": "The {defensive_team} returner takes the ball out of the endzone and finds some space to run! The hole quickly collapses, and they get to the 30 yard line before being brought down.",
+          "2": "The {defensive_team} returner makes a break from the endzone and manages to reach the 30 yard line, but the pursuing defenders catch up for the tackle.",
+          "3": "The {defensive_team} returner returns the kick and reaches the 30 yard line, showcasing some elusive moves before being tackled."
+          }
+      },
+      "35": {
+          "KICKOFF": {
+          "1": "The {defensive_team} returner takes the ball out of the endzone and finds some space to run! The hole quickly collapses, and they get pushed out at the 35 yard line.",
+          "2": "The {defensive_team} returner returns the kick from the endzone and reaches the 35 yard line before being forced out of bounds by the kicking team.",
+          "3": "The {defensive_team} returner attempts to return the kick and gains some yardage, pushed out of bounds at the 35 yard line."
+          }
+      },
+      "40": {
+          "KICKOFF": {
+          "1": "The {defensive_team} returner takes the ball out of the endzone and finds some space to run! The hole quickly collapses, and they get pushed out at the 40 yard line.",
+          "2": "The {defensive_team} returner attempts to run the ball out from the endzone but is forced out of bounds at the 40 yard line by the kicking team.",
+          "3": "The {defensive_team} returner returns the kick from the endzone, reaching the 40 yard line but facing tough defense."
+          }
+      },
+      "45": {
+        "KICKOFF": {
+          "1": "The {defensive_team} returner takes the ball out of the endzone and finds some space to run! They make a man miss! Oh, and he gets absolutely leveled at the 45 yard line! What a hit!",
+          "2": "The {defensive_team} returner returns the kick from the endzone and reaches the 45 yard line but is met with a bone-crushing tackle from the kicking team.",
+          "3": "The {defensive_team} returner attempts to return the kick, breaks a tackle, but is leveled by a hard hit at the 45 yard line."
+        }
+      },
+      "50": {
+        "KICKOFF": {
+          "1": "The {defensive_team} returner takes the ball out of the endzone and finds some space to run! They make a man miss! Just the kicker to beat and... he gets taken down by the shoelaces at the 50 yard line.",
+          "2": "The {defensive_team} returner returns the kick from the endzone and breaks free, but the kicker manages to make a desperate tackle at the 50 yard line.",
+          "3": "The {defensive_team} returner attempts to return the kick and breaks away, only to be tripped up by the kicker at the 50 yard line."
+        }
+      },
+      "65": {
+        "KICKOFF": {
+          "1": "The {defensive_team} returner takes the ball out of the endzone and he's free down the sideline! He's at the 50, the 40... and he gets taken down at the opposing 35 yard line by a speedy defender! What a return!",
+          "2": "The {defensive_team} returner returns the kick from deep in the endzone and breaks away down the sideline, reaching the opposing 35 yard line before being tackled.",
+          "3": "The {defensive_team} returner makes a fantastic return, dashing down the sideline and reaching the opposing 35 yard line before being brought down by a pursuing defender."
+        }
+      },
+      "TOUCHDOWN": {
+        "KICKING TEAM TOUCHDOWN": {
+          "1": "The {defensive_team} returner takes it all the way back for a {defensive_team} touchdown! Wait, hold on! He dropped the ball on the one yard line before crossing, and the ball is going the other way! {offensive_team} touchdown! What a turn of events!",
+          "2": "The {defensive_team} returner takes the kick out of their endzone, but disaster strikes! The ball is dropped on the 30, and {offensive_team} picks it up and capitalizes for a touchdown!",
+          "3": "The {defensive_team} returner returns the kick, and a fumble occurs on the 20 yard line! The ball is scooped up by {offensive_team}, who takes it in for a touchdown!"
+        }
+      },
+      "FUMBLE": {
+        "MUFFED KICK": {
+          "1": "The {offensive_team} kicker sends the ball deep, and it takes an unexpected bounce! The {defensive_team} returner can't handle it, and the {offensive_team} recovers at the 25 yard line. {offensive_team} ball!",
+          "2": "The {defensive_team} returner mishandles the kick, and the {offensive_team} recovers at the 25 yard line. {offensive_team} ball!",
+          "3": "A tricky bounce confuses the {defensive_team} returner, resulting in a fumble and recovery by {offensive_team} at the 25 yard line. {offensive_team} ball!"
+        }
+      },
+      "RETURN TOUCHDOWN": {
+        "RETURN TOUCHDOWN": {
+          "1": "{offensive_team} kicks off, and the {defensive_team} returner takes it all the way back for a {defensive_team} touchdown! What a spectacular return!",
+          "2": "{offensive_team} kicks off, and the {defensive_team} returner finds an opening, sprinting all the way for a stunning {defensive_team} touchdown!",
+          "3": "{offensive_team} kicks off, and the {defensive_team} returner weaves through defenders, breaking free for a dazzling {defensive_team} touchdown!"
+        }
+      }
+    },
+    "KICKOFF ONSIDE": {
+      "RECOVERED": {
+        "ONSIDE KICK RECOVERED": {
+          "1": "{offensive_team} attempts an onside kick and successfully recovers the ball after it careens off a return man. {offensive_team} ball!",
+          "2": "{offensive_team} executes a perfect onside kick, and they recover the ball after a fortuitous bounce. {offensive_team} ball!",
+          "3": "{offensive_team} surprises everyone with a successful onside kick, recovering the ball and gaining possession at the {ball_location} yard line. {offensive_team} ball!"
+        }
+      },
+      "NO GOOD": {
+        "ONSIDE KICK FAILED": {
+          "1": "{offensive_team} attempts an onside kick, but it is quickly snuffed out. {defensive_team} ball.",
+          "2": "{offensive_team} tries an onside kick, but the {defensive_team} is alert and recovers the ball. {defensive_team} ball.",
+          "3": "{offensive_team} gambles with an onside kick, but the {defensive_team} secures the ball, denying the attempt. {defensive_team} ball."
+        }
+      }
+    },
+    "KICKOFF SQUIB": {
+      "30": {
+        "KICKOFF": {
+          "1": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner takes the ball at the 30 and kneels."
+        }
+      },
+      "35": {
+        "KICKOFF": {
+          "1": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner takes the ball at the 30 and finds some space to run! The hole quickly collapses, and they get pushed out at the 35 yard line.",
+          "2": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner takes the ball at the 30 and reaches the 35 yard line before being forced out of bounds by the kicking team.",
+          "3": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner attempts to return the kick and gains some yardage, pushed out of bounds at the 35 yard line."
+        }
+      },
+      "40": {
+        "KICKOFF": {
+          "1": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner takes the ball at the 30 and finds some space to run! The hole quickly collapses, and they get pushed out at the 40 yard line.",
+          "2": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner attempts to takes the ball at the 30 but is forced out of bounds at the 40 yard line by the kicking team.",
+          "3": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner takes the ball at the 30, reaching the 40 yard line but facing tough defense."
+        }
+      },
+      "45": {
+        "KICKOFF": {
+          "1": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner takes the ball at the 30 and finds some space to run! They make a man miss! Oh, and he gets absolutely leveled at the 45 yard line! What a hit!",
+          "2": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner takes the ball at the 30 and reaches the 45 yard line but is met with a bone-crushing tackle from the kicking team.",
+          "3": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner attempts to return the kick at the 30, breaks a tackle, but is leveled by a hard hit at the 45 yard line."
+        }
+      },
+      "50": {
+        "KICKOFF": {
+          "1": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner takes the ball at the 30 and finds some space to run! They make a man miss! Just the kicker to beat and... he gets taken down by the shoelaces at the 50 yard line.",
+          "2": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner takes the ball at the 30 and breaks free, but the kicker manages to make a desperate tackle at the 50 yard line.",
+          "3": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner attempts to return the kick and breaks away, only to be tripped up by the kicker at the 50 yard line."
+        }
+      },
+      "TOUCHDOWN": {
+        "KICKING TEAM TOUCHDOWN": {
+          "1": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner takes it all the way back for a {defensive_team} touchdown! Wait, hold on! He dropped the ball on the one yard line before crossing, and the ball is going the other way! {offensive_team} touchdown! What a turn of events!",
+          "2": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner takes the ball at the 30, but disaster strikes! The ball is dropped on the 45, and {offensive_team} picks it up and capitalizes for a touchdown!",
+          "3": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner returns the kick, and a fumble occurs on the 35 yard line! The ball is scooped up by {offensive_team}, who takes it in for a touchdown!"
+        }
+      },
+      "FUMBLE": {
+        "MUFFED KICK": {
+          "1": "{offensive_team} squib kicks to try to kill clock and prevent a big return and it takes an unexpected bounce! The {defensive_team} returner can't handle it, and the {offensive_team} recovers at the 25 yard line. {offensive_team} ball!",
+          "2": "{offensive_team} squib kicks to try to kill clock and prevent a big return. The {defensive_team} returner mishandles the kick, and the {offensive_team} recovers at the 25 yard line. {offensive_team} ball!",
+          "3": "{offensive_team} squib kicks to try to kill clock and prevent a big return. A tricky bounce confuses the {defensive_team} returner, resulting in a fumble and recovery by {offensive_team} at the 25 yard line. {offensive_team} ball!"
+        }
+      },
+      "RETURN TOUCHDOWN": {
+        "RETURN TOUCHDOWN": {
+          "1": "{offensive_team} squib kicks to try to kill clock and prevent a big return.. {offensive_team} kicks off, and the {defensive_team} returner takes it all the way back for a {defensive_team} touchdown! What a spectacular return!",
+          "2": "{offensive_team} squib kicks to try to kill clock and prevent a big return.. {offensive_team} kicks off, and the {defensive_team} returner finds an opening, sprinting all the way for a stunning {defensive_team} touchdown!",
+          "3": "{offensive_team} squib kicks to try to kill clock and prevent a big return.. {offensive_team} kicks off, and the {defensive_team} returner weaves through defenders, breaking free for a dazzling {defensive_team} touchdown!"
+        }
+      }
+    },
+    "RUN": {
+      "PICK/FUMBLE 6": {
+        "TURNOVER TOUCHDOWN": {
+          "1": "{defensive_team} forces a fumble and takes it all the way back for a {defending_team} touchdown! What a play!"
+        }
+      },
+      "TO": {
+          "TURNOVER": {
+            "1": "{defensive_team} forces a fumble and recovers it at the {ball_location} yard line. {defending_team} ball!"
+          },
+          "TURNOVER TOUCHDOWN": {
+            "1": "{defending_team} forces a fumble and takes it all the way back for a {defending_team} touchdown! What a play!"
+          }
+      },
+      "NO GAIN": {
+        "TURNOVER ON DOWNS": {
+          "1": "They go for it on 4th down, a bold choice! The QB hands it off to the running back who is immediately stuffed at the line. That's a turnover on downs!"
+        },
+        "NO GAIN": {
+          "1": "The QB hands the ball off to the running back, who is met at the line of scrimmage for no gain"
+        }
+      },
+      "YARDS": {
+        "TOUCHDOWN": {
+          "1": "The QB hands the ball off to the running back, who takes it all the way for a {offensive_team} touchdown!"
+        },
+        "SAFETY": {
+          "1": "The QB hands the ball off to the running back, who is tackled behind the line in the endzone for a safety!"
+        },
+        "FIRST DOWN": {
+          "1": "The QB hands the ball off to the running back, who gains {yards} yards before being tackled. That's a {offensive_team} first down!"
+        },
+        "TURNOVER ON DOWNS": {
+          "1": "They go for it on 4th down, a bold choice! The QB hands the ball off to the running back, who is met at the line of scrimmage for a gain of {yards} yards. That won't be enough and that's a turnover on downs!"
+        },
+        "GAIN": {
+          "1": "The QB hands the ball off to the running back, who gains {yards} yards before being tackled"
+        },
+        "LOSS": {
+          "1": "The QB hands the ball off to the running back, who is met at the line of scrimmage and driven back for a loss of {yards} yards"
+        }
+      }
+    },
+    "PASS": {
+      "PICK/FUMBLE 6": {
+        "TURNOVER TOUCHDOWN": {
+          "1": "{defending_team} intercepts the pass and takes it all the way back for a {defending_team} touchdown! What a play!"
+        }
+      },
+        "TO": {
+            "TURNOVER": {
+            "1": "{defending_team} intercepts the pass and returns it to the {ball_location} yard line. {defending_team} ball!"
+            },
+            "TURNOVER TOUCHDOWN": {
+            "1": "{defending_team} intercepts the pass and takes it all the way back for a {defending_team} touchdown! What a play!"
+            }
+        },
+        "INCOMPLETE": {
+            "TURNOVER ON DOWNS": {
+            "1": "They go for it on 4th down, a bold choice! The QB drops back and fires a pass to the crossing receiver, but it falls incomplete. That's a turnover on downs!"
+            },
+            "NO GAIN": {
+              "1": "The QB drops back and fires a pass to the crossing receiver, but it falls incomplete"
+            }
+        },
+      "YARDS": {
+        "TOUCHDOWN": {
+          "1": "The QB drops back and fires a pass to the crossing receiver, who takes it all the way for a {offensive_team} touchdown!"
+        },
+        "SAFETY": {
+          "1": "The QB drops back and is looking, but a defender is screaming off the edge that he doesn't see! He's sacked in the endzone for a safety!"
+        },
+        "FIRST DOWN": {
+          "1": "The QB drops back and fires a pass to the crossing receiver, who gains {yards} yards before being tackled. That's enough for a {offensive_team} first down!"
+        },
+        "TURNOVER ON DOWNS": {
+          "1": "They go for it on 4th down, a bold choice! The QB drops back and fires a pass to the crossing receiver, who gains {yards} yards. That won't be enough and it is a turnover on downs!"
+        },
+        "GAIN": {
+          "1": "The QB drops back and fires a pass to the crossing receiver, who gains {yards} yards before being tackled"
+        },
+        "LOSS": {
+          "1": "The QB drops back but the pocket breaks down and he can't escape! He's sacked for a loss of {yards} yards"
+        }
+      }
+    },
+    "SPIKE": {
+      "SPIKE": {
+        "SPIKE": {
+          "1": "The QB takes the snap and spikes the ball to stop the clock"
+        }
+      }
+    },
+    "KNEEL": {
+      "KNEEL": {
+        "KNEEL": {
+          "1": "The QB takes the snap and kneels to run out the clock"
+        }
+      }
+    },
+    "FIELD GOAL": {
+
+    },
+    "PUNT": {
+
+    },
+    "TWO POINT": {
+      "GOOD": {
+        "GOOD": {
+          "1": "The {offensive_team} goes for two and converts!"
+        }
+      },
+      "NO GOOD": {
+        "NO GOOD": {
+          "1": "The {offensive_team} goes for two but fails to convert!"
+        }
+      },
+      "DEFENSE TWO POINT": {
+        "DEFENSE TWO POINT": {
+          "1": "The {defensive_team} intercepts the ball and returns it all the way for a defensive two point conversion!"
+        }
+      }
+    },
+    "PAT": {
+      "GOOD": {
+        "GOOD": {
+        "1": "The {offensive_team} kicks the PAT and converts!"
+        }
+      },
+      "NO GOOD": {
+        "NO GOOD": {
+        "1": "The {offensive_team} kicks the PAT but fails to convert!"
+        }
+      },
+      "DEFENSE TWO POINT": {
+        "DEFENSE TWO POINT": {
+        "1": "The {defensive_team} blocks the kick and returns it all the way for a defensive two point conversion!"
+        }
+      }
+    }
+  }
 }

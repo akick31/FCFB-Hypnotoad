@@ -1,6 +1,7 @@
 import re
 import sys
 import logging
+import random
 
 from fcfb.main.exceptions import async_exception_handler, InvalidParameterError
 from fcfb.api.zebstrika.game_plays import submit_defensive_number, submit_offensive_number
@@ -70,12 +71,6 @@ async def start_game(client, config_data, discord_messages, game_parameters):
         # Start the game
         await post_game(config_data, game_thread.thread.id, season, week, subdivision, home_team, away_team, tv_channel,
                         start_time, location, is_scrimmage)
-
-        # Update the game info message at the top of the thread
-        game_object = await get_ongoing_game_by_thread_id(config_data, game_thread.thread.id)
-        embed = await craft_embed(game_object)
-        game_info_message = game_thread.thread.starter_message
-        await game_info_message.edit(embed=embed)
 
         # Prompt for coin toss
         start_game_message = discord_messages["gameStartMessage"].format(
@@ -164,23 +159,18 @@ async def validate_and_submit_offensive_number(client, config_data, discord_mess
         if defensive_timeout_called:
             offensive_timeout_called = False
 
+        # Get the team that starts the play with possession
+        offensive_team = home_user_object["team"] if game_object["possession"] == "home" else away_user_object["team"]
+        defensive_team = home_user_object["team"] if game_object["possession"] == "away" else away_user_object["team"]
+
         # Submit offensive number and get the play result
         play_result = await submit_offensive_number(config_data, game_id, play_id, offensive_number, play, runoff_type,
                                                     offensive_timeout_called, defensive_timeout_called)
 
         # Print the play result
-        await create_message(message.channel, play_result)
-
-        # Update the embed
         game_object = await get_ongoing_game_by_thread_id(config_data, message.channel.id)
-        embed = await craft_embed(game_object)
-        thread = await get_thread_by_id(client, message.channel.id)
-        game_info_message = None
-        async for message in thread.history(oldest_first=True):
-            game_info_message = message
-            break
-
-        await game_info_message.edit(embed=embed)
+        await share_play_result(message, discord_messages, game_object, offensive_team, defensive_team, play,
+                                play_result)
 
         # Send the prompt for the next number
         if play_result["possession"] == "home":
@@ -191,6 +181,57 @@ async def validate_and_submit_offensive_number(client, config_data, discord_mess
                                              play_result["homeTeam"])
     except Exception as e:
         raise Exception(e)
+
+
+@async_exception_handler()
+async def share_play_result(message, discord_messages, game_object, offensive_team, defensive_team, play, play_result):
+    """
+    Share the play result in the game channel
+
+    :param message:
+    :param discord_messages:
+    :param game_object:
+    :param offensive_team:
+    :param defensive_team:
+    :param play:
+    :param play_result:
+    :return:
+    """
+
+    # Craft the embed with the updated game object
+    embed = await craft_embed(game_object)
+
+    result = play_result['result']
+    actual_result = play_result['actualResult']
+    play = play.upper()
+
+    # Modify the ball location so it makes sense
+    ball_location = int(play_result['ballLocation'])
+    if ball_location > 50:
+        ball_location = 100 - ball_location
+        ball_location = f"{ball_location}%"
+    else:
+        ball_location = f"{ball_location}%"
+
+    # Modify the result for TO
+    if "TO +" in result or "TO -" in result or result == "TURNOVER":
+        result = "TO"
+
+    # Modify the result for YARDS
+    if "YARDS" in result:
+        result = "YARDS"
+
+    # Grab the message from the JSON
+    message_count = len(discord_messages["resultMessage"][play][result][actual_result].values())
+    message_number = str(random.randint(1, message_count))
+    message_to_send = discord_messages["resultMessage"][play][result][actual_result][message_number].format(
+        offensive_team=offensive_team,
+        defensive_team=defensive_team,
+        yards=play_result['yards'],
+        ball_location=ball_location
+    )
+
+    await create_message(message.channel, message_to_send, embed)
 
 
 @async_exception_handler()
@@ -305,21 +346,13 @@ async def message_offense_for_number(client, waiting_on, discord_messages, messa
         embed = await craft_embed(game_object)
         thread = await get_thread_by_id(client, thread_id)
 
-        # Edit the game info message at the top of the thread
-        game_info_message = None
-        async for message in thread.history(oldest_first=True):
-            game_info_message = message
-            break
-
-        await game_info_message.edit(embed=embed)
-
         # Append if there was a timeout and the timer
         if defense_timeout_called:
             number_request_message += "\nThe defense has called a timeout"
         number_request_message += f"\n\n You have until {game_object['gameTimer']} to submit a number"
 
         # Send the play result
-        await create_message(thread, number_request_message)
+        await create_message(thread, number_request_message, embed)
     except Exception as e:
         raise Exception(e)
 

@@ -207,25 +207,9 @@ async def get_thread_by_id(client, thread_id):
 
 
 @async_exception_handler()
-async def create_message(channel, message_text):
+async def create_message(channel, message_text, embed=None):
     """
     Create a message
-
-    :param channel:
-    :param message_text:
-    :return:
-    """
-
-    try:
-        await channel.send(message_text)
-    except Exception as e:
-        raise DiscordAPIError(f"There was an issue sending a message to the channel, {e}")
-
-
-@async_exception_handler()
-async def create_message_with_embed(channel, message_text, embed):
-    """
-    Create a message with an embed
 
     :param channel:
     :param message_text:
@@ -236,8 +220,7 @@ async def create_message_with_embed(channel, message_text, embed):
     try:
         await channel.send(message_text, embed=embed)
     except Exception as e:
-        raise DiscordAPIError(f"There was an issue sending the embed message to the channel, {e}")
-
+        raise DiscordAPIError(f"There was an issue sending a message to the channel, {e}")
 
 @async_exception_handler()
 async def send_direct_message(user, message_text, embed=None):
